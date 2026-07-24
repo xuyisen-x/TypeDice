@@ -1,0 +1,359 @@
+(* ============================================================ *)
+(* TypeDice Grammar                                             *)
+(* ============================================================ *)
+
+
+(* ============================================================ *)
+(* 1. Top-level expression                                      *)
+(* ============================================================ *)
+
+expr
+    = conditional_expr ;
+
+
+(* ============================================================ *)
+(* 2. Conditional expression                                    *)
+(*                                                              *)
+(* Right associative:                                           *)
+(*   a ? b : c ? d : e                                          *)
+(* = a ? b : (c ? d : e)                                        *)
+(* ============================================================ *)
+
+conditional_expr
+    = binary_expr
+      [ "?" expr ":" conditional_expr ] ;
+
+
+(* ============================================================ *)
+(* 3. Binary expression                                         *)
+(*                                                              *)
+(* Binary operators are parsed as a flat sequence.              *)
+(* Their precedence and associativity are handled when          *)
+(* constructing the AST.                                        *)
+(* ============================================================ *)
+
+binary_expr
+    = unary
+      { binary_op unary } ;
+
+binary_op
+    = logical_or_op
+    | logical_and_op
+    | compare_op
+    | concat_op
+    | additive_op
+    | multiplicative_op ;
+
+logical_or_op
+    = "||" ;
+
+logical_and_op
+    = "&&" ;
+
+compare_op
+    = "<"
+    | "<="
+    | ">"
+    | ">="
+    | "="
+    | "!=" ;
+
+concat_op
+    = "#" ;
+
+additive_op
+    = "+"
+    | "-" ;
+
+multiplicative_op
+    = "*"
+    | "/"
+    | "//"
+    | "%" ;
+
+
+(* ============================================================ *)
+(* 4. Unary expression                                          *)
+(*                                                              *)
+(* Prefix unary operators are applied right-to-left.            *)
+(* ============================================================ *)
+
+unary
+    = { unary_op }
+      dice_with_modifiers ;
+
+unary_op
+    = "+"
+    | "-"
+    | "!" ;
+
+
+(* ============================================================ *)
+(* 5. Dice expression                                           *)
+(* ============================================================ *)
+
+dice_with_modifiers
+    = dice_expr
+      { modifier } ;
+
+dice_expr
+    = atom [ dice_tail ]
+    | dice_tail ;
+
+dice_tail
+    = "d" atom
+    | "dc"
+    | "df" ;
+
+
+(* ============================================================ *)
+(* 6. Atomic expression                                         *)
+(* ============================================================ *)
+
+atom
+    = number
+    | boolean
+    | named_expr
+    | list
+    | function_call
+    | special_form
+    | "(" expr ")" ;
+
+boolean
+    = "true"
+    | "false" ;
+
+
+(* ============================================================ *)
+(* 7. Named expression                                          *)
+(*                                                              *)
+(* Examples:                                                    *)
+(*   ${力量}                                                    *)
+(*   ${攻击加值}                                                *)
+(*   ${attack-bonus}                                            *)
+(*   ${character.strength}                                      *)
+(*                                                              *)
+(* Any non-whitespace characters are allowed except "}".         *)
+(* At least one character is required.                           *)
+(* ============================================================ *)
+
+named_expr
+    = "${"
+      named_expr_char
+      { named_expr_char }
+      "}" ;
+
+named_expr_char
+    = ? any Unicode character except whitespace and "}" ? ;
+
+
+(* ============================================================ *)
+(* 8. Lists                                                     *)
+(* ============================================================ *)
+
+list
+    = "["
+      [ expr
+        { "," expr }
+      ]
+      "]" ;
+
+
+(* ============================================================ *)
+(* 9. Normal function calls                                     *)
+(* ============================================================ *)
+
+function_call
+    = regular_function_call
+    | filter_call ;
+
+regular_function_call
+    = func_name
+      "("
+      [ expr
+        { "," expr }
+      ]
+      ")" ;
+
+filter_call
+    = "filter"
+      mod_param
+      "("
+      [ expr
+        { "," expr }
+      ]
+      ")" ;
+
+func_name
+    = "floor"
+    | "ceil"
+    | "round"
+    | "abs"
+    | "fmax"
+    | "fmin"
+    | "sum"
+    | "avg"
+    | "len"
+    | "sortd"
+    | "sort"
+    | "tolist" ;
+
+
+(* ============================================================ *)
+(* 10. Special forms                                            *)
+(*                                                              *)
+(* Special forms operate directly on expression structure       *)
+(* rather than behaving as ordinary runtime functions.          *)
+(* The leading "@" intentionally makes this visible to users.   *)
+(* ============================================================ *)
+
+special_form
+    = repeat_form
+    | crit_form ;
+
+repeat_form
+    = "@repeat"
+      "("
+      expr
+      ","
+      expr
+      ")" ;
+
+crit_form
+    = "@crit"
+      "("
+      expr
+      ")" ;
+
+
+(* ============================================================ *)
+(* 11. Dice modifiers                                           *)
+(* ============================================================ *)
+
+modifier
+    = keep_drop_modifier
+    | min_max_modifier
+    | reroll_modifier
+    | explode_modifier
+    | success_failure_modifier ;
+
+
+(* Keep / drop:
+ * parameter is optional, default = 1.
+ *)
+
+keep_drop_modifier
+    = ("kh" | "kl" | "dh" | "dl")
+      [ atom ] ;
+
+(*
+ * Min / max:
+ * parameter is required.
+ *)
+
+min_max_modifier
+    = ("min" | "max")
+      atom ;
+
+
+(* Reroll:
+ * condition is required.
+ *)
+
+reroll_modifier
+    = "r"
+      mod_param
+      [ limit ] ;
+
+
+(* Explode:
+ * "x" replaces the old "!" syntax.
+ *
+ * condition is optional.
+ * When omitted, the default condition is normally:
+ * result = maximum dice face.
+ *)
+
+explode_modifier
+    = "x"
+      [ mod_param ]
+      [ limit ] ;
+
+
+(* Success / failure related modifiers:
+ * condition is required.
+ *)
+
+success_failure_modifier
+    = ("cs" | "cf" | "sf")
+      mod_param ;
+
+
+(* ============================================================ *)
+(* 12. Modifier condition                                       *)
+(*                                                              *)
+(* Square brackets deliberately separate modifier comparison    *)
+(* conditions from normal comparison expressions.               *)
+(*                                                              *)
+(* Examples:                                                    *)
+(*   [1]                                                        *)
+(*   [=1]                                                       *)
+(*   [<2]                                                       *)
+(*   [>=${difficulty}]                                          *)
+(*   [>=(1 + 1d4)]                                              *)
+(*                                                              *)
+(* Missing compare_op defaults to "=".                           *)
+(* ============================================================ *)
+
+mod_param
+    = "["
+      [ compare_op ]
+      atom
+      "]" ;
+
+
+(* ============================================================ *)
+(* 13. Modifier limits                                          *)
+(* ============================================================ *)
+
+limit
+    = "lt"
+      atom
+      [ "lc" atom ]
+
+    | "lc"
+      atom
+      [ "lt" atom ] ;
+
+
+(* ============================================================ *)
+(* 14. Number literal                                           *)
+(*                                                              *)
+(* Intended examples:                                           *)
+(*   1                                                          *)
+(*   1.5                                                        *)
+(*   .5                                                         *)
+(*   1.                                                         *)
+(*   1e3                                                        *)
+(*   1.5e-3                                                     *)
+(*                                                              *)
+(* Leading +/- are unary operators, not part of number.          *)
+(* ============================================================ *)
+
+number
+    = integer_part [ "." [ digit { digit } ] ] [ exponent ]
+    | "." digit { digit } [ exponent ] ;
+
+integer_part
+    = digit
+      { digit } ;
+
+exponent
+    = ("e" | "E")
+      [ "+" | "-" ]
+      digit
+      { digit } ;
+
+digit
+    = "0" | "1" | "2" | "3" | "4"
+    | "5" | "6" | "7" | "8" | "9" ;
