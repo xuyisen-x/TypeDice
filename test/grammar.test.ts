@@ -1,65 +1,97 @@
 import { describe, expect, it } from "vitest"
 
-import type { ExpressionEntryCstNode } from "../src/syntax/generated/cst.js"
-import { buildHir } from "../src/hir/builder.js"
-import { lexDice } from "../src/syntax/lexer.js"
-import { parseDiceTokens } from "../src/syntax/parser.js"
+import type { HIRNode } from "../src/index.js"
+import { buildHirFromString, hirToString } from "../src/index.js"
 
-describe("Parser", () => {
+class ParserError extends Error {
+  constructor(
+    message: string,
+    readonly location: {
+      startOffset: number
+      endOffset?: number
+      startLine?: number
+      endLine?: number
+      startColumn?: number
+      endColumn?: number
+    } | null
+  ) {
+    super(message)
+  }
+}
+
+class LexerError extends Error {
+  constructor(
+    message: string,
+    readonly location: {
+      startOffset: number
+      endOffset?: number
+      startLine?: number
+      endLine?: number
+      startColumn?: number
+      endColumn?: number
+    } | null
+  ) {
+    super(message)
+  }
+}
+
+class HIRBuilderError extends Error {
+  constructor(
+    message: string,
+    readonly location: {
+      startOffset: number
+      endOffset?: number
+      startLine?: number
+      endLine?: number
+      startColumn?: number
+      endColumn?: number
+    } | null
+  ) {
+    super(message)
+  }
+}
+
+function testHelper(input: string, env: (name: string) => HIRNode | undefined): string {
+  const result = buildHirFromString(input, env)
+  if (!result.ok) {
+    if (result.error.kind === "lexer") {
+      throw new LexerError(result.error.message, result.error.location)
+    } else if (result.error.kind === "parser") {
+      throw new ParserError(result.error.message, result.error.location)
+    } else if (result.error.kind === "hir") {
+      throw new HIRBuilderError(result.error.message, result.error.location)
+    } else {
+      throw new Error("Unknown error kind")
+    }
+  }
+  return hirToString(result.value)
+}
+
+describe("HIR Builder", () => {
   it("respects multiplication precedence when folding constants", () => {
-    const tokens = lexDice("1 + 2 * 3")
-    expect(tokens.ok).toBe(true)
-    if (!tokens.ok) throw new Error("Lexing failed")
-
-    const cst = parseDiceTokens(tokens.value)
-    expect(cst.ok).toBe(true)
-    if (!cst.ok) throw new Error("Parsing failed")
-
-    const hir = buildHir(cst.value as ExpressionEntryCstNode, () => undefined)
-    expect(hir).toEqual({
-      ok: true,
-      value: {
-        kind: "number",
-        value: { kind: "constant", value: 7 },
-      },
-    })
+    const folded = testHelper("1 + 2 * 3", () => undefined)
+    expect(folded).toBe("7")
   })
 
   it("merges matching constant dice pools in addition", () => {
-    const tokens = lexDice("2d6 + 2d6")
-    expect(tokens.ok).toBe(true)
-    if (!tokens.ok) throw new Error("Lexing failed")
-
-    const cst = parseDiceTokens(tokens.value)
-    expect(cst.ok).toBe(true)
-    if (!cst.ok) throw new Error("Parsing failed")
-
-    const hir = buildHir(cst.value as ExpressionEntryCstNode, () => undefined)
-    expect(hir).toEqual({
-      ok: true,
-      value: {
-        kind: "number",
-        value: {
-          kind: "dicePool",
-          value: {
-            kind: "standard",
-            count: { kind: "constant", value: 4 },
-            sides: { kind: "constant", value: 6 },
-          },
-        },
-      },
-    })
+    const folded = testHelper("1d6 + 3d8 + 2d6", () => undefined)
+    expect(folded).toBe("3d6 + 3d8")
   })
 
   it("should work", () => {
-    const input = "2d6r[<=3] + 1"
-    const tokens = lexDice(input)
-    expect(tokens.ok).toBe(true)
-    if (!tokens.ok) throw new Error("Lexing failed")
-    const cst = parseDiceTokens(tokens.value)
-    if (!cst.ok) console.log(cst.error)
-    expect(cst.ok).toBe(true)
-    if (!cst.ok) throw new Error("Parsing failed")
-    console.log(cst.value)
+    const folded = testHelper("2d6r[<=3]+1", () => undefined)
+    expect(folded).toBe("2d6r[<=3] + 1")
+  })
+
+  it("should not work due to ParserError", () => {
+    expect(() => testHelper("2d6r[<=3]+1+", () => undefined)).toThrow(ParserError)
+  })
+
+  it("should not work due to LexerError", () => {
+    expect(() => testHelper("true | false", () => undefined)).toThrow(LexerError)
+  })
+
+  it("should not work due to HIRBuilderError", () => {
+    expect(() => testHelper("1 + true", () => undefined)).toThrow(HIRBuilderError)
   })
 })

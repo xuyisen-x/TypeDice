@@ -1,6 +1,7 @@
 import { createToken, Lexer } from "chevrotain"
 import type { ILexingError, IToken, TokenType } from "chevrotain"
 import type { Result } from "../utils.js"
+import { chineseLexerErrorMessageProvider } from "../errors.js"
 
 // ============================================================
 // 1. Abstract token categories
@@ -375,6 +376,7 @@ export const allTokens: TokenType[] = [
 export const diceLexer = new Lexer(allTokens, {
   ensureOptimizations: true,
   positionTracking: "full",
+  errorMessageProvider: chineseLexerErrorMessageProvider,
 })
 
 // ============================================================

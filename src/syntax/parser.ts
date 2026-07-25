@@ -1,5 +1,6 @@
 import { CstParser, EOF } from "chevrotain"
 import type { CstNode, IToken, IRecognitionException } from "chevrotain"
+import { chineseParserErrorMessageProvider } from "../errors.js"
 import {
   WhiteSpace,
   Colon,
@@ -273,7 +274,10 @@ export class DiceParser extends CstParser {
     ])
   )
   constructor() {
-    super(allTokens)
+    super(allTokens, {
+      errorMessageProvider: chineseParserErrorMessageProvider,
+      nodeLocationTracking: "full",
+    })
     this.performSelfAnalysis()
   }
 }
