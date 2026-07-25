@@ -17,10 +17,12 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "@vitest/coverage-v8": "^4.1.10",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   },

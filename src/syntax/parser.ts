@@ -1,5 +1,5 @@
 import { CstParser, EOF } from "chevrotain"
-import type { CstNode, IToken, IRecognitionException } from "chevrotain"
+import type { IToken, IRecognitionException } from "chevrotain"
 import { chineseParserErrorMessageProvider } from "../errors.js"
 import {
   WhiteSpace,
@@ -33,6 +33,7 @@ import {
   allTokens,
 } from "./lexer.js"
 import type { Result } from "../utils.js"
+import type { ExpressionEntryCstNode } from "./generated/cst.js"
 
 export class DiceParser extends CstParser {
   public readonly optionalWhitespace = this.RULE("optional_whitespace", () => {
@@ -284,9 +285,9 @@ export class DiceParser extends CstParser {
 
 const parser = new DiceParser()
 
-export function parseDiceTokens(tokens: IToken[]): Result<CstNode, IRecognitionException[]> {
+export function parseDiceTokens(tokens: IToken[]): Result<ExpressionEntryCstNode, IRecognitionException[]> {
   parser.input = tokens
-  const cst = parser.expressionEntry()
+  const cst = parser.expressionEntry() as ExpressionEntryCstNode
   if (parser.errors.length > 0) return { ok: false, error: parser.errors }
   return { ok: true, value: cst }
 }

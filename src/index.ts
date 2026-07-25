@@ -13,7 +13,6 @@ import {
 } from "./errors.js"
 import { parseDiceTokens } from "./syntax/parser.js"
 import { buildHir } from "./hir/builder.js"
-import type { ExpressionEntryCstNode } from "./syntax/generated/cst.js"
 
 export function buildHirFromString(
   input: string,
@@ -23,7 +22,7 @@ export function buildHirFromString(
   if (!tokens.ok) return { ok: false, error: lexingErrorToStandardError(tokens.error[0]) }
   const cst = parseDiceTokens(tokens.value)
   if (!cst.ok) return { ok: false, error: recognitionExceptionToStandardError(cst.error[0]) }
-  const hir = buildHir(cst.value as ExpressionEntryCstNode, env)
+  const hir = buildHir(cst.value, env)
   if (!hir.ok) return { ok: false, error: hirBuildErrorToStandardError(hir.error) }
   return { ok: true, value: hir.value }
 }
