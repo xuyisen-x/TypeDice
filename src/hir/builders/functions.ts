@@ -4,7 +4,8 @@
 
 import type { IToken } from "chevrotain"
 import type { HirEnv, HIRNode, ListType, NumberType } from "../types.js"
-import { isConstantList } from "../../utils.js"
+import { normalizeNaturalNumber } from "../../utils.js"
+import { isConstantList } from "../utils.js"
 import { hirErrorToken } from "../errors.js"
 import { numberPlusNumber } from "../operations/number.js"
 import type { FilterCallCstNode, RegularFunctionCallCstNode } from "../../syntax/generated/cst.js"
@@ -121,12 +122,7 @@ function buildAggregateFunction(name: AggregateFunctionName, list: ListType, fun
 
 function buildListSelectionFunction(name: ListSelectionFunctionName, list: ListType, count: NumberType): HIRNode {
   if (isConstantList(list) && count.kind === "constant") {
-    function normalizeListSelectionCount(value: number): number {
-      const normalized = Math.max(0, Math.floor(value))
-      return isNaN(normalized) || !isFinite(normalized) ? 0 : normalized
-    }
-
-    const normalizedCount = normalizeListSelectionCount(count.value)
+    const normalizedCount = normalizeNaturalNumber(count.value)
     if (normalizedCount === 0) return { kind: "list", value: { kind: "explicit", value: [] } }
     if (normalizedCount >= list.value.length) return { kind: "list", value: list }
 

@@ -3,7 +3,7 @@ import { hirError } from "../errors.js"
 import { processModifier } from "./modifiers.js"
 import { buildAtomHir } from "./core.js"
 import type { HirEnv, HIRNode, NumberType } from "../types.js"
-import { numberNormalize } from "../../utils.js"
+import { numberNormalize } from "../utils.js"
 
 export function buildDiceWithModifierHir(node: DiceWithModifiersCstNode, env: HirEnv): HIRNode {
   const baseHir = buildDiceExpressionHir(node.children.base[0], env)

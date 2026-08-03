@@ -12,7 +12,7 @@ import type {
 import { hirError, hirErrorToken } from "../errors.js"
 import { buildAtomHir } from "./core.js"
 import type { HirEnv, HIRNode, LimitType, ModParamType } from "../types.js"
-import { numberNormalize } from "../../utils.js"
+import { numberNormalize } from "../utils.js"
 import {
   Cf,
   Cs,

@@ -1,6 +1,6 @@
 import type { IToken } from "chevrotain"
 import type { ListType, NumberType } from "../types.js"
-import { isConstantList } from "../../utils.js"
+import { isConstantList } from "../utils.js"
 import {
   numberDivideNumber,
   numberIntDivideNumber,

@@ -14,25 +14,12 @@ import type {
   NumberType,
   SuccessPoolType,
 } from "./types.js"
-import { assertNever } from "../utils.js"
+import { assertNever, PRECEDENCE } from "../utils.js"
 
 type Rendered = {
   text: string
   precedence: number
 }
-
-const PRECEDENCE = {
-  ternary: 0,
-  or: 1,
-  and: 2,
-  compare: 3,
-  concat: 4,
-  additive: 5,
-  multiplicative: 6,
-  unary: 7,
-  dice: 8,
-  atom: 9,
-} as const
 
 function parenthesize(value: Rendered): string {
   return `(${value.text})`

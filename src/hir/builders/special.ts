@@ -2,7 +2,7 @@ import type { CritFormCstNode, RepeatFormCstNode } from "../../syntax/generated/
 import { hirError } from "../errors.js"
 import { rewriteHirForCrit } from "../rewriters/crit.js"
 import type { HirEnv, HIRNode, NumberType } from "../types.js"
-import { numberNormalize } from "../../utils.js"
+import { numberNormalize } from "../utils.js"
 import { buildExpressionHir } from "./core.js"
 
 export function buildRepeatForm(node: RepeatFormCstNode, env: HirEnv): HIRNode {
