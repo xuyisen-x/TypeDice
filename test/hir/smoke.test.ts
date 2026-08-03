@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { canonicalize, buildHirOrThrow, ParserError, LexerError, HIRBuilderError } from "./helper.js"
+import { canonicalize, buildHirOrThrow, ParserError, LexerError, HIRBuilderError } from "../helper.js"
 
 describe("Smoke tests", () => {
   it("does math", () => {

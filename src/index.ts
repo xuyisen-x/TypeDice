@@ -1,6 +1,18 @@
 export * from "./hir/types.js"
 export type { StandardError, StandardErrorKind, StandardErrorLocation } from "./errors.js"
 export { hirToString } from "./hir/stringify.js"
+export type {
+  DicePool,
+  DieDetail,
+  NodeLayout,
+  OutputNode,
+  RuntimeValue,
+  SuccessPool,
+  EvaluationOptions,
+  EvaluationResult,
+  RollInfo,
+} from "./runtime/types.js"
+export { evaluateHir } from "./runtime/evaluate.js"
 
 import type { StandardError } from "./errors.js"
 import type { HIRNode } from "./hir/types.js"

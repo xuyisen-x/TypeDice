@@ -1,5 +1,5 @@
-import type { HIRNode, StandardErrorLocation } from "../src/index.js"
-import { buildHirFromString, hirToString } from "../src/index.js"
+import type { EvaluationOptions, EvaluationResult, HIRNode, StandardErrorLocation } from "../src/index.js"
+import { buildHirFromString, evaluateHir, hirToString } from "../src/index.js"
 
 export const emptyEnv = (_name: string): HIRNode | undefined => undefined
 
@@ -30,6 +30,12 @@ export class HIRBuilderError extends Error {
   }
 }
 
+export class EvaluationError extends Error {
+  constructor(message: string) {
+    super(message)
+  }
+}
+
 export function buildHirOrThrow(input: string, env = emptyEnv): HIRNode {
   const result = buildHirFromString(input, env)
   if (!result.ok) {
@@ -47,4 +53,12 @@ export function buildHirOrThrow(input: string, env = emptyEnv): HIRNode {
 
 export function canonicalize(input: string, env = emptyEnv): string {
   return hirToString(buildHirOrThrow(input, env))
+}
+
+export function evaluateHirOrThrow(value: HIRNode, options?: EvaluationOptions): EvaluationResult {
+  const result = evaluateHir(value, options)
+  if (!result.ok) {
+    throw new EvaluationError(result.error)
+  }
+  return result.value
 }

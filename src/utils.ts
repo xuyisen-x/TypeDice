@@ -9,6 +9,18 @@ export function normalizeNaturalNumber(value: number): number {
   return Number.isFinite(normalized) ? normalized : 0
 }
 
+export function formatFiniteNumber(value: number): string {
+  if (Number.isInteger(value)) return value.toString()
+
+  let rounded = Number(value.toFixed(2))
+
+  // Keep a non-zero value non-zero. Apart from preserving its sign, this also
+  // prevents a valid divisor from becoming zero after formatting.
+  if (rounded === 0 && value !== 0) rounded = Math.sign(value) * 0.01
+
+  return rounded.toString()
+}
+
 export const PRECEDENCE = {
   ternary: 0,
   or: 1,
