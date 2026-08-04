@@ -102,6 +102,7 @@ function rewriteDicePool(value: DicePoolType): DicePoolType {
         pool: rewriteDicePool(value.pool),
         modParam: rewriteModParam(value.modParam),
       }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -133,6 +134,7 @@ function rewriteSuccessPool(value: SuccessPoolType): SuccessPoolType {
         pool: rewriteSuccessPool(value.pool),
         modParam: rewriteModParam(value.modParam),
       }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -171,6 +173,7 @@ function rewriteNumberBinary(value: NumberBinaryType): NumberBinaryType {
         lhs: rewriteNumber(value.lhs),
         rhs: rewriteNumber(value.rhs),
       }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -196,6 +199,7 @@ function rewriteNumberFunction(value: NumberFunctionType): NumberFunctionType {
       return { kind: "avg", value: rewriteList(value.value) }
     case "len":
       return { kind: "len", value: rewriteList(value.value) }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -222,6 +226,7 @@ function rewriteNumber(value: NumberType): NumberType {
       }
     case "negative":
       return { kind: "negative", value: rewriteNumber(value.value) }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -307,6 +312,7 @@ function rewriteListBinary(value: ListBinaryType): ListBinaryType {
         lhs: rewriteNumber(value.lhs),
         rhs: rewriteList(value.rhs),
       }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -348,6 +354,7 @@ function rewriteListFunction(value: ListFunctionType): ListFunctionType {
         list: rewriteList(value.list),
         modParam: rewriteModParam(value.modParam),
       }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -368,6 +375,7 @@ function rewriteList(value: ListType): ListType {
         trueValue: rewriteList(value.trueValue),
         falseValue: rewriteList(value.falseValue),
       }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -411,6 +419,7 @@ function rewriteBooleanCompare(value: BooleanCompareType): BooleanCompareType {
         lhs: rewriteNumber(value.lhs),
         rhs: rewriteNumber(value.rhs),
       }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -430,6 +439,7 @@ function rewriteBooleanBinary(value: BooleanBinaryType): BooleanBinaryType {
         lhs: rewriteBoolean(value.lhs),
         rhs: rewriteBoolean(value.rhs),
       }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -452,6 +462,7 @@ function rewriteBoolean(value: BooleanType): BooleanType {
       }
     case "not":
       return { kind: "not", value: rewriteBoolean(value.value) }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -465,6 +476,7 @@ export function rewriteHirForCrit(value: HIRNode): HIRNode {
       return { kind: "list", value: rewriteList(value.value) }
     case "boolean":
       return { kind: "boolean", value: rewriteBoolean(value.value) }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }

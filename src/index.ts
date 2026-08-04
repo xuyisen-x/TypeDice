@@ -1,6 +1,7 @@
 export * from "./hir/types.js"
 export type { StandardError, StandardErrorKind, StandardErrorLocation } from "./errors.js"
 export { hirToString } from "./hir/stringify.js"
+export { rewriteHirForCrit } from "./hir/rewriters/crit.js"
 export type {
   DicePool,
   DieDetail,

@@ -32,17 +32,14 @@ import {
 } from "../../syntax/lexer.js"
 
 export function processModifier(node: ModifierCstNode, env: HirEnv): (x: HIRNode) => HIRNode {
-  if (node.children.keepDropModifier) {
-    return processKeepDropModifier(node.children.keepDropModifier[0], env)
-  } else if (node.children.minMaxModifier) {
-    return processMinMaxModifier(node.children.minMaxModifier[0], env)
-  } else if (node.children.rerollModifier) {
-    return rerollModifier(node.children.rerollModifier[0], env)
-  } else if (node.children.explodeModifier) {
-    return processExplodeModifier(node.children.explodeModifier[0], env)
-  } else if (node.children.successFailureModifier) {
+  if (node.children.keepDropModifier) return processKeepDropModifier(node.children.keepDropModifier[0], env)
+  if (node.children.minMaxModifier) return processMinMaxModifier(node.children.minMaxModifier[0], env)
+  if (node.children.rerollModifier) return rerollModifier(node.children.rerollModifier[0], env)
+  if (node.children.explodeModifier) return processExplodeModifier(node.children.explodeModifier[0], env)
+  /* v8 ignore else -- @preserve */
+  if (node.children.successFailureModifier)
     return processSuccessFailureModifier(node.children.successFailureModifier[0], env)
-  } else throw new Error("Unreachable")
+  /* v8 ignore next -- @preserve */ throw new Error("Unreachable")
 }
 
 export function processKeepDropModifier(node: KeepDropModifierCstNode, env: HirEnv): (x: HIRNode) => HIRNode {
@@ -52,7 +49,10 @@ export function processKeepDropModifier(node: KeepDropModifierCstNode, env: HirE
     : { kind: "number", value: { kind: "constant", value: 1 } }
 
   if (count.kind !== "number") {
-    hirError("保留/丢弃修饰符的计数必须是数字类型", node.children.count ? node.children.count[0] : node)
+    hirError(
+      "保留/丢弃修饰符的计数必须是数字类型",
+      node.children.count ? node.children.count[0] : /* v8 ignore next -- @preserve */ node
+    )
   }
 
   const normalizedCount = numberNormalize(count.value)
@@ -61,7 +61,7 @@ export function processKeepDropModifier(node: KeepDropModifierCstNode, env: HirE
     if (x.kind !== "number" || x.value.kind !== "dicePool") {
       hirError("保留/丢弃修饰符只能用于骰池类型", node)
     }
-    if (tokenMatcher(keepDropToken, Kh)) {
+    if (tokenMatcher(keepDropToken, Kh))
       return {
         kind: "number",
         value: {
@@ -73,7 +73,7 @@ export function processKeepDropModifier(node: KeepDropModifierCstNode, env: HirE
           },
         },
       }
-    } else if (tokenMatcher(keepDropToken, Kl)) {
+    if (tokenMatcher(keepDropToken, Kl))
       return {
         kind: "number",
         value: {
@@ -85,7 +85,7 @@ export function processKeepDropModifier(node: KeepDropModifierCstNode, env: HirE
           },
         },
       }
-    } else if (tokenMatcher(keepDropToken, Dh)) {
+    if (tokenMatcher(keepDropToken, Dh))
       return {
         kind: "number",
         value: {
@@ -97,7 +97,8 @@ export function processKeepDropModifier(node: KeepDropModifierCstNode, env: HirE
           },
         },
       }
-    } else if (tokenMatcher(keepDropToken, Dl)) {
+    /* v8 ignore else -- @preserve */
+    if (tokenMatcher(keepDropToken, Dl))
       return {
         kind: "number",
         value: {
@@ -109,7 +110,7 @@ export function processKeepDropModifier(node: KeepDropModifierCstNode, env: HirE
           },
         },
       }
-    } else throw new Error("Unreachable")
+    /* v8 ignore next -- @preserve */ throw new Error("Unreachable")
   }
 }
 
@@ -122,7 +123,7 @@ export function processMinMaxModifier(node: MinMaxModifierCstNode, env: HirEnv):
     if (x.kind !== "number" || x.value.kind !== "dicePool") {
       hirError("最小/最大修饰符只能用于骰池类型", node)
     }
-    if (tokenMatcher(minMaxToken, Min)) {
+    if (tokenMatcher(minMaxToken, Min))
       return {
         kind: "number",
         value: {
@@ -134,7 +135,8 @@ export function processMinMaxModifier(node: MinMaxModifierCstNode, env: HirEnv):
           },
         },
       }
-    } else if (tokenMatcher(minMaxToken, Max)) {
+    /* v8 ignore else -- @preserve */
+    if (tokenMatcher(minMaxToken, Max))
       return {
         kind: "number",
         value: {
@@ -146,7 +148,7 @@ export function processMinMaxModifier(node: MinMaxModifierCstNode, env: HirEnv):
           },
         },
       }
-    } else throw new Error("Unreachable")
+    /* v8 ignore next -- @preserve */ throw new Error("Unreachable")
   }
 }
 
@@ -231,7 +233,8 @@ export function processSuccessFailureModifier(
             },
           },
         }
-    } else if (tokenMatcher(successFailureToken, Cf)) {
+    }
+    if (tokenMatcher(successFailureToken, Cf)) {
       if (x.kind !== "number" || (x.value.kind !== "dicePool" && x.value.kind !== "successPool"))
         hirError("cf修饰符只能用于骰池或成功池类型", node)
       if (x.value.kind === "successPool")
@@ -258,7 +261,9 @@ export function processSuccessFailureModifier(
             },
           },
         }
-    } else if (tokenMatcher(successFailureToken, Sf)) {
+    }
+    /* v8 ignore else -- @preserve */
+    if (tokenMatcher(successFailureToken, Sf)) {
       if (x.kind !== "number" || x.value.kind !== "dicePool") hirError("sf修饰符只能用于骰池类型", node)
       return {
         kind: "number",
@@ -271,7 +276,8 @@ export function processSuccessFailureModifier(
           },
         },
       }
-    } else throw new Error("Unreachable")
+    }
+    /* v8 ignore next -- @preserve */ throw new Error("Unreachable")
   }
 }
 
@@ -280,41 +286,41 @@ export function processModParam(node: ModParamCstNode, env: HirEnv): ModParamTyp
   const value = buildAtomHir(node.children.atom[0], env)
   if (value.kind !== "number") hirError("修饰参数的值必须是数字类型", node.children.atom[0])
 
-  if (op === undefined || tokenMatcher(op, Equal)) {
-    return { kind: "equal", value: value.value }
-  } else if (tokenMatcher(op, NotEqual)) {
-    return { kind: "notEqual", value: value.value }
-  } else if (tokenMatcher(op, Less)) {
-    return { kind: "lessThan", value: value.value }
-  } else if (tokenMatcher(op, LessEqual)) {
-    return { kind: "lessThanOrEqual", value: value.value }
-  } else if (tokenMatcher(op, Greater)) {
-    return { kind: "greaterThan", value: value.value }
-  } else if (tokenMatcher(op, GreaterEqual)) {
-    return { kind: "greaterThanOrEqual", value: value.value }
-  } else {
-    hirErrorToken(`未知的比较运算符: ${op.image}`, op)
-  }
+  if (op === undefined || tokenMatcher(op, Equal)) return { kind: "equal", value: value.value }
+  if (tokenMatcher(op, NotEqual)) return { kind: "notEqual", value: value.value }
+  if (tokenMatcher(op, Less)) return { kind: "lessThan", value: value.value }
+  if (tokenMatcher(op, LessEqual)) return { kind: "lessThanOrEqual", value: value.value }
+  if (tokenMatcher(op, Greater)) return { kind: "greaterThan", value: value.value }
+  /* v8 ignore else -- @preserve */
+  if (tokenMatcher(op, GreaterEqual)) return { kind: "greaterThanOrEqual", value: value.value }
+  /* v8 ignore next -- @preserve */ hirErrorToken(`未知的比较运算符: ${op.image}`, op)
 }
 
 export function processLimit(node: LimitCstNode, env: HirEnv): LimitType {
   if (node.children.timeLimit1 || node.children.countLimit1) {
-    const lt = node.children.timeLimit1 ? buildAtomHir(node.children.timeLimit1[0], env) : undefined
+    const lt = node.children.timeLimit1
+      ? buildAtomHir(node.children.timeLimit1[0], env)
+      : /* v8 ignore next -- @preserve */ undefined
     if (lt && lt.kind !== "number") hirError("迭代次数的限制必须是数字类型", node.children.timeLimit1![0])
     const lc = node.children.countLimit1 ? buildAtomHir(node.children.countLimit1[0], env) : undefined
     if (lc && lc.kind !== "number") hirError("计数的限制必须是数字类型", node.children.countLimit1![0])
     return {
       countLimit: lc ? numberNormalize(lc.value) : undefined,
-      timeLimit: lt ? numberNormalize(lt.value) : undefined,
+      timeLimit: lt ? numberNormalize(lt.value) : /* v8 ignore next -- @preserve */ undefined,
     }
-  } else if (node.children.timeLimit2 || node.children.countLimit2) {
-    const lc = node.children.countLimit2 ? buildAtomHir(node.children.countLimit2[0], env) : undefined
+  }
+  /* v8 ignore else -- @preserve */
+  if (node.children.timeLimit2 || node.children.countLimit2) {
+    const lc = node.children.countLimit2
+      ? buildAtomHir(node.children.countLimit2[0], env)
+      : /* v8 ignore next -- @preserve */ undefined
     if (lc && lc.kind !== "number") hirError("计数的限制必须是数字类型", node.children.countLimit2![0])
     const lt = node.children.timeLimit2 ? buildAtomHir(node.children.timeLimit2[0], env) : undefined
     if (lt && lt.kind !== "number") hirError("迭代次数的限制必须是数字类型", node.children.timeLimit2![0])
     return {
-      countLimit: lc ? numberNormalize(lc.value) : undefined,
+      countLimit: lc ? numberNormalize(lc.value) : /* v8 ignore next -- @preserve */ undefined,
       timeLimit: lt ? numberNormalize(lt.value) : undefined,
     }
-  } else throw new Error("Unreachable")
+  }
+  /* v8 ignore next -- @preserve */ throw new Error("Unreachable")
 }

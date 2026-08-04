@@ -16,7 +16,7 @@ export const KeepDropModifierOperator = category("KeepDropModifierOperator", "�
 export const MinMaxModifierOperator = category("MinMaxModifierOperator", "最大/最小限制修饰符") // min max
 export const SuccessFailureModifierOperator = category("SuccessFailureModifierOperator", "成功/失败修饰符") // cs cf sf
 export const BuiltinFunction = category("BuiltinFunction", "函数名") // floor ceil round ...
-export const BooleanLiteral = category("BooleanLiteral", "布尔值") // true / false
+export const BooleanLiteral = category("BooleanLiteral", "布尔值字面量") // true / false
 
 // ============================================================
 // 2. Helpers
@@ -215,7 +215,7 @@ export const Lc = keyword("Lc", "lc")
 export const NumberLiteral = createToken({
   name: "NumberLiteral",
   pattern: /(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?/,
-  label: "数字",
+  label: "数字字面量",
 })
 
 // ============================================================

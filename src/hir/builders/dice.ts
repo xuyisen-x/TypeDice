@@ -17,29 +17,34 @@ export function buildDiceExpressionHir(node: DiceExpressionCstNode, env: HirEnv)
   if (node.children.pureTail) {
     const builder = processDiceTail(node.children.pureTail[0], env)
     return builder({ kind: "constant", value: 1 })
-  } else if (node.children.count && !node.children.tail) {
+  }
+  if (node.children.count && !node.children.tail) {
     const countNode = buildAtomHir(node.children.count[0], env)
     return countNode
-  } else if (node.children.count && node.children.tail) {
+  }
+  /* v8 ignore else -- @preserve */
+  if (node.children.count && node.children.tail) {
     const countNode = buildAtomHir(node.children.count[0], env)
     if (countNode.kind !== "number") hirError("骰子数量必须是数字类型", node.children.count[0])
     const builder = processDiceTail(node.children.tail[0], env)
     return builder(countNode.value)
-  } else throw new Error("Unreachable")
+  }
+  /* v8 ignore next -- @preserve */ throw new Error("Unreachable")
 }
 
 export function processDiceTail(node: DiceTailCstNode, env: HirEnv): (n: NumberType) => HIRNode {
-  if (node.children.Df) {
+  if (node.children.Df)
     return (base: NumberType) => {
       const normalizedBase = numberNormalize(base)
       return { kind: "number", value: { kind: "dicePool", value: { kind: "fudge", count: normalizedBase } } }
     }
-  } else if (node.children.Dc) {
+  if (node.children.Dc)
     return (base: NumberType) => {
       const normalizedBase = numberNormalize(base)
       return { kind: "number", value: { kind: "dicePool", value: { kind: "coin", count: normalizedBase } } }
     }
-  } else if (node.children.D && node.children.sides) {
+  /* v8 ignore else -- @preserve */
+  if (node.children.D && node.children.sides) {
     const sidesNode = buildAtomHir(node.children.sides[0], env)
     if (sidesNode.kind !== "number") hirError("骰子面数必须是数字类型", node.children.sides[0])
     return (base: NumberType) => {
@@ -50,5 +55,6 @@ export function processDiceTail(node: DiceTailCstNode, env: HirEnv): (n: NumberT
         value: { kind: "dicePool", value: { kind: "standard", count: normalizedBase, sides: normalizedSides } },
       }
     }
-  } else throw new Error("Unreachable")
+  }
+  /* v8 ignore next -- @preserve */ throw new Error("Unreachable")
 }

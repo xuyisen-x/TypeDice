@@ -96,6 +96,7 @@ function renderModParam(value: ModParamType): string {
         return "<"
       case "lessThanOrEqual":
         return "<="
+      /* v8 ignore next -- @preserve */
       default:
         return assertNever(value)
     }
@@ -121,12 +122,12 @@ function renderDicePool(value: DicePoolType): Rendered {
       }
     case "fudge":
       return {
-        text: `${renderNumberAtom(value.count)}df`,
+        text: `${renderNumberAtom(value.count)}dF`,
         precedence: PRECEDENCE.dice,
       }
     case "coin":
       return {
-        text: `${renderNumberAtom(value.count)}dc`,
+        text: `${renderNumberAtom(value.count)}dC`,
         precedence: PRECEDENCE.dice,
       }
     case "keepHigh":
@@ -172,6 +173,7 @@ function renderDicePool(value: DicePoolType): Rendered {
         text: `${renderDicePool(value.pool).text}sf${renderModParam(value.modParam)}`,
         precedence: PRECEDENCE.dice,
       }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -199,6 +201,7 @@ function renderSuccessPool(value: SuccessPoolType): Rendered {
         text: `${renderSuccessPool(value.pool).text}cf${renderModParam(value.modParam)}`,
         precedence: PRECEDENCE.dice,
       }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -226,14 +229,19 @@ function renderAdd(value: Extract<NumberBinaryType, { kind: "add" }>): Rendered 
   }
 
   if (value.constant !== 0 || text === undefined) {
-    if (text === undefined) {
-      text = renderConstant(value.constant).text
-    } else if (Number.isNaN(value.constant)) {
-      text += ` + ${renderRightOperand(renderConstant(value.constant), PRECEDENCE.additive)}`
-    } else if (value.constant < 0) {
-      text += ` - ${renderRightOperand(renderConstant(-value.constant), PRECEDENCE.additive)}`
+    /* v8 ignore else -- @preserve */
+    if (text !== undefined) {
+      if (Number.isNaN(value.constant)) {
+        text += ` + ${renderRightOperand(renderConstant(value.constant), PRECEDENCE.additive)}`
+      } else if (value.constant < 0) {
+        text += ` - ${renderRightOperand(renderConstant(-value.constant), PRECEDENCE.additive)}`
+      } else {
+        text += ` + ${renderRightOperand(renderConstant(value.constant), PRECEDENCE.additive)}`
+      }
     } else {
-      text += ` + ${renderRightOperand(renderConstant(value.constant), PRECEDENCE.additive)}`
+      /* the HIR builder will fold this case into a constant, so this branch is unreachable */
+      /* v8 ignore next -- @preserve */
+      text = renderConstant(value.constant).text
     }
   }
 
@@ -269,6 +277,7 @@ function renderNumberBinary(value: NumberBinaryType): Rendered {
       return renderInfix(renderNumber(value.lhs), "//", renderNumber(value.rhs), PRECEDENCE.multiplicative)
     case "modulo":
       return renderInfix(renderNumber(value.lhs), "%", renderNumber(value.rhs), PRECEDENCE.multiplicative)
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -293,6 +302,7 @@ function renderNumberFunction(value: NumberFunctionType): Rendered {
         text: `${value.kind}(${renderList(value.value).text})`,
         precedence: PRECEDENCE.atom,
       }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -318,6 +328,7 @@ function renderNumber(value: NumberType): Rendered {
       )
     case "negative":
       return renderPrefix("-", renderNumber(value.value))
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -351,6 +362,7 @@ function renderListBinary(value: ListBinaryType): Rendered {
       return renderInfix(renderList(value.lhs), "%", renderNumber(value.rhs), PRECEDENCE.multiplicative)
     case "moduloReverse":
       return renderInfix(renderNumber(value.lhs), "%", renderList(value.rhs), PRECEDENCE.multiplicative)
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -397,6 +409,7 @@ function renderListFunction(value: ListFunctionType): Rendered {
         text: `filter${renderModParam(value.modParam)}(${renderList(value.list).text})`,
         precedence: PRECEDENCE.atom,
       }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -415,6 +428,7 @@ function renderList(value: ListType): Rendered {
       return renderListBinary(value.value)
     case "ternary":
       return renderTernary(renderBoolean(value.condition), renderList(value.trueValue), renderList(value.falseValue))
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -435,6 +449,7 @@ function renderBooleanCompare(value: BooleanCompareType): Rendered {
         return "<"
       case "lessThanOrEqual":
         return "<="
+      /* v8 ignore next -- @preserve */
       default:
         return assertNever(value)
     }
@@ -449,6 +464,7 @@ function renderBooleanBinary(value: BooleanBinaryType): Rendered {
       return renderInfix(renderBoolean(value.lhs), "&&", renderBoolean(value.rhs), PRECEDENCE.and)
     case "or":
       return renderInfix(renderBoolean(value.lhs), "||", renderBoolean(value.rhs), PRECEDENCE.or)
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -473,6 +489,7 @@ function renderBoolean(value: BooleanType): Rendered {
       )
     case "not":
       return renderPrefix("!", renderBoolean(value.value))
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -486,6 +503,7 @@ export function hirToString(value: HIRNode): string {
       return renderList(value.value).text
     case "boolean":
       return renderBoolean(value.value).text
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }

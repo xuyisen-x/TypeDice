@@ -15,12 +15,13 @@ export function buildHir(
     const hir = buildExpressionEntryHir(node, { resolveNamedExpression })
     return { ok: true, value: hir }
   } catch (e) {
+    /* v8 ignore else -- @preserve */
     if (e instanceof HirBuildException) {
       return {
         ok: false,
         error: { message: e.message, location: e.location },
       }
     }
-    throw e
+    /* v8 ignore next -- @preserve */ throw e
   }
 }

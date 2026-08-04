@@ -16,7 +16,6 @@ export function buildRepeatForm(node: RepeatFormCstNode, env: HirEnv): HIRNode {
   const normalizedCount = numberNormalize(countHir.value)
   if (normalizedCount.kind !== "constant") hirError("重复表单的计数必须是编译期常量", node.children.count[0])
 
-  if (normalizedCount.value < 0) hirError("重复表单的计数不能为负数", node.children.count[0])
   const repeatedList: NumberType[] = []
   for (let i = 0; i < normalizedCount.value; i++) {
     repeatedList.push(...listHir.value.value)

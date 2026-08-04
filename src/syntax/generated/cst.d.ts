@@ -17,7 +17,6 @@ export interface ExpressionEntryCstNode extends CstNode {
 export type ExpressionEntryCstChildren = {
   optional_whitespace: (Optional_whitespaceCstNode)[];
   expression: ExpressionCstNode[];
-  EOF: IToken[];
 };
 
 export interface ExpressionCstNode extends CstNode {

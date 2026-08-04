@@ -1,5 +1,6 @@
 export type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }
 
+/* v8 ignore next -- @preserve */
 export function assertNever(value: never): never {
   throw new Error(`Unexpected value: ${JSON.stringify(value)}`)
 }

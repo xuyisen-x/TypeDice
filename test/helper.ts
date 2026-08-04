@@ -1,6 +1,7 @@
 import type { EvaluationOptions, EvaluationResult, HIRNode, StandardErrorLocation } from "../src/index.js"
 import { buildHirFromString, evaluateHir, hirToString } from "../src/index.js"
 
+/* v8 ignore next -- @preserve */
 export const emptyEnv = (_name: string): HIRNode | undefined => undefined
 
 export class ParserError extends Error {

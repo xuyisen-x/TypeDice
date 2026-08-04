@@ -4,7 +4,7 @@
 
 import type { IToken } from "chevrotain"
 import type { HirEnv, HIRNode, ListType, NumberType } from "../types.js"
-import { normalizeNaturalNumber } from "../../utils.js"
+import { assertNever, normalizeNaturalNumber } from "../../utils.js"
 import { isConstantList } from "../utils.js"
 import { hirErrorToken } from "../errors.js"
 import { numberPlusNumber } from "../operations/number.js"
@@ -117,15 +117,20 @@ function buildAggregateFunction(name: AggregateFunctionName, list: ListType, fun
       }
       return { kind: "number", value: { kind: "function", value: { kind: name, value: list } } }
     }
+
+    /* v8 ignore next -- @preserve */
+    default:
+      assertNever(name)
   }
 }
 
 function buildListSelectionFunction(name: ListSelectionFunctionName, list: ListType, count: NumberType): HIRNode {
-  if (isConstantList(list) && count.kind === "constant") {
-    const normalizedCount = normalizeNaturalNumber(count.value)
-    if (normalizedCount === 0) return { kind: "list", value: { kind: "explicit", value: [] } }
-    if (normalizedCount >= list.value.length) return { kind: "list", value: list }
-
+  if (count.kind !== "constant")
+    return { kind: "list", value: { kind: "function", value: { kind: name, list, count } } }
+  const normalizedCount = normalizeNaturalNumber(count.value)
+  if (normalizedCount === 0) return { kind: "list", value: { kind: "explicit", value: [] } }
+  if (list.kind === "explicit" && normalizedCount >= list.value.length) return { kind: "list", value: list }
+  if (isConstantList(list)) {
     const selected = list.value
       .map((item, index) => ({ item, index }))
       .sort((lhs, rhs) => {
@@ -135,10 +140,8 @@ function buildListSelectionFunction(name: ListSelectionFunctionName, list: ListT
       .slice(0, normalizedCount)
       .sort((lhs, rhs) => lhs.index - rhs.index)
       .map(({ item }) => item)
-
     return { kind: "list", value: { kind: "explicit", value: selected } }
   }
-
   return { kind: "list", value: { kind: "function", value: { kind: name, list, count } } }
 }
 
@@ -199,14 +202,14 @@ export function buildRegularFunctionCall(node: RegularFunctionCallCstNode, env: 
           kind: "list",
           value: { kind: "function", value: { kind: "tolistFromDice", value: value.value } },
         }
-      } else if (value.kind === "successPool") {
-        return {
-          kind: "list",
-          value: { kind: "function", value: { kind: "tolistFromSuccess", value: value.value } },
-        }
+      }
+      return {
+        kind: "list",
+        value: { kind: "function", value: { kind: "tolistFromSuccess", value: value.value } },
       }
     }
 
+    /* v8 ignore next -- @preserve */
     default:
       hirErrorToken(`未知的内置函数: ${functionNameToken.image}`, functionNameToken)
   }

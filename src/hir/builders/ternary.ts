@@ -39,7 +39,8 @@ export function buildConditionalExpressionHir(node: ConditionalExpressionCstNode
         falseValue: falseBranchHir.value,
       },
     }
-  } else if (trueBranchHir.kind === "list" && falseBranchHir.kind === "list") {
+  }
+  if (trueBranchHir.kind === "list" && falseBranchHir.kind === "list")
     return {
       kind: "list",
       value: {
@@ -49,7 +50,8 @@ export function buildConditionalExpressionHir(node: ConditionalExpressionCstNode
         falseValue: falseBranchHir.value,
       },
     }
-  } else if (trueBranchHir.kind === "boolean" && falseBranchHir.kind === "boolean") {
+  /* v8 ignore else -- @preserve */
+  if (trueBranchHir.kind === "boolean" && falseBranchHir.kind === "boolean")
     return {
       kind: "boolean",
       value: {
@@ -59,7 +61,6 @@ export function buildConditionalExpressionHir(node: ConditionalExpressionCstNode
         falseValue: falseBranchHir.value,
       },
     }
-  }
 
-  throw new Error("Unreachable")
+  /* v8 ignore next -- @preserve */ throw new Error("Unreachable")
 }

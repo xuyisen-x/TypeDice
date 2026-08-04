@@ -41,7 +41,8 @@ function applyUnaryOperator(op: IToken, operand: HIRNode): HIRNode {
     } else {
       return { kind: "number", value: { kind: "negative", value } }
     }
-  } else if (tokenMatcher(op, LogicalNot)) {
+  }
+  if (tokenMatcher(op, LogicalNot)) {
     if (operand.kind !== "boolean") hirErrorToken("逻辑非只能用于布尔类型", op)
     if (operand.value.kind === "constant") {
       return { kind: "boolean", value: { kind: "constant", value: !operand.value.value } }
@@ -50,10 +51,13 @@ function applyUnaryOperator(op: IToken, operand: HIRNode): HIRNode {
     } else {
       return { kind: "boolean", value: { kind: "not", value: operand.value } }
     }
-  } else if (tokenMatcher(op, Plus)) {
+  }
+  /* v8 ignore else -- @preserve */
+  if (tokenMatcher(op, Plus)) {
     if (operand.kind !== "number") hirErrorToken("一元正号只能用于数字类型", op)
     return operand
-  } else hirErrorToken(`未知的一元运算符${op.image}`, op)
+  }
+  /* v8 ignore next -- @preserve */ throw new Error(`Unreachable: unknown unary operator ${op.image}`)
 }
 
 export function buildUnaryExpressionHir(node: UnaryExpressionCstNode, env: HirEnv): HIRNode {

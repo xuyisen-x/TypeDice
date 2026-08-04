@@ -1,5 +1,5 @@
-import { CstParser, EOF } from "chevrotain"
-import type { IToken, IRecognitionException } from "chevrotain"
+import { CstParser, tokenMatcher } from "chevrotain"
+import type { IToken, IRecognitionException, TokenType } from "chevrotain"
 import { chineseParserErrorMessageProvider } from "../errors.js"
 import {
   WhiteSpace,
@@ -42,11 +42,15 @@ export class DiceParser extends CstParser {
     })
   })
 
+  private nextAfterOptionalWhitespaceIs(tokenType: TokenType): boolean {
+    const offset = tokenMatcher(this.LA(1), WhiteSpace) ? 2 : 1
+    return tokenMatcher(this.LA(offset), tokenType)
+  }
+
   public readonly expressionEntry = this.RULE("expressionEntry", () => {
     this.SUBRULE(this.optionalWhitespace) // Allow leading whitespace
     this.SUBRULE(this.expression)
     this.SUBRULE2(this.optionalWhitespace) // Allow trailing whitespace
-    this.CONSUME(EOF)
   })
 
   public readonly expression = this.RULE("expression", () => {
@@ -55,25 +59,31 @@ export class DiceParser extends CstParser {
 
   public readonly conditionalExpression = this.RULE("conditionalExpression", () => {
     this.SUBRULE(this.binaryExpression, { LABEL: "condition" })
-    this.OPTION(() => {
-      this.SUBRULE(this.optionalWhitespace) // Allow whitespace before the question mark
-      this.CONSUME(Question)
-      this.SUBRULE2(this.optionalWhitespace) // Allow whitespace after the question mark
-      this.SUBRULE(this.expression, { LABEL: "trueBranch" })
-      this.SUBRULE3(this.optionalWhitespace) // Allow whitespace before the colon
-      this.CONSUME(Colon)
-      this.SUBRULE4(this.optionalWhitespace) // Allow whitespace after the colon
-      this.SUBRULE(this.conditionalExpression, { LABEL: "falseBranch" })
+    this.OPTION({
+      GATE: () => this.nextAfterOptionalWhitespaceIs(Question),
+      DEF: () => {
+        this.SUBRULE(this.optionalWhitespace) // Allow whitespace before the question mark
+        this.CONSUME(Question)
+        this.SUBRULE2(this.optionalWhitespace) // Allow whitespace after the question mark
+        this.SUBRULE(this.expression, { LABEL: "trueBranch" })
+        this.SUBRULE3(this.optionalWhitespace) // Allow whitespace before the colon
+        this.CONSUME(Colon)
+        this.SUBRULE4(this.optionalWhitespace) // Allow whitespace after the colon
+        this.SUBRULE(this.conditionalExpression, { LABEL: "falseBranch" })
+      },
     })
   })
 
   public readonly binaryExpression = this.RULE("binaryExpression", () => {
     this.SUBRULE(this.unaryExpression, { LABEL: "lhs" })
-    this.MANY(() => {
-      this.SUBRULE(this.optionalWhitespace) // Allow whitespace before the binary operator
-      this.CONSUME(BinaryOperator, { LABEL: "operator" })
-      this.SUBRULE2(this.optionalWhitespace) // Allow whitespace after the binary operator
-      this.SUBRULE2(this.unaryExpression, { LABEL: "rhs" })
+    this.MANY({
+      GATE: () => this.nextAfterOptionalWhitespaceIs(BinaryOperator),
+      DEF: () => {
+        this.SUBRULE(this.optionalWhitespace) // Allow whitespace before the binary operator
+        this.CONSUME(BinaryOperator, { LABEL: "operator" })
+        this.SUBRULE2(this.optionalWhitespace) // Allow whitespace after the binary operator
+        this.SUBRULE2(this.unaryExpression, { LABEL: "rhs" })
+      },
     })
   })
 
@@ -91,50 +101,59 @@ export class DiceParser extends CstParser {
   })
 
   public readonly diceExpression = this.RULE("diceExpression", () => {
-    this.OR([
-      {
-        ALT: () => {
-          this.SUBRULE(this.atom, { LABEL: "count" })
-          this.OPTION(() => this.SUBRULE(this.diceTail, { LABEL: "tail" }))
+    this.OR({
+      DEF: [
+        {
+          ALT: () => {
+            this.SUBRULE(this.atom, { LABEL: "count" })
+            this.OPTION(() => this.SUBRULE(this.diceTail, { LABEL: "tail" }))
+          },
         },
-      },
-      { ALT: () => this.SUBRULE2(this.diceTail, { LABEL: "pureTail" }) },
-    ])
+        { ALT: () => this.SUBRULE2(this.diceTail, { LABEL: "pureTail" }) },
+      ],
+      ERR_MSG: "单独的原子表达式或骰子表达式",
+    })
   })
 
   public readonly diceTail = this.RULE("diceTail", () => {
-    this.OR([
-      { ALT: () => this.CONSUME(Df) },
-      { ALT: () => this.CONSUME(Dc) },
-      {
-        ALT: () => {
-          this.CONSUME(D)
-          this.SUBRULE(this.atom, { LABEL: "sides" })
+    this.OR({
+      DEF: [
+        { ALT: () => this.CONSUME(Df) },
+        { ALT: () => this.CONSUME(Dc) },
+        {
+          ALT: () => {
+            this.CONSUME(D)
+            this.SUBRULE(this.atom, { LABEL: "sides" })
+          },
         },
-      },
-    ])
+      ],
+      ERR_MSG: "df、dc 或标准骰子表达式",
+    })
   })
 
   public readonly atom = this.RULE("atom", () => {
-    this.OR([
-      { ALT: () => this.CONSUME(NumberLiteral) },
-      { ALT: () => this.CONSUME(BooleanLiteral) },
-      { ALT: () => this.CONSUME(NamedExpression) },
-      { ALT: () => this.SUBRULE(this.listExpression) },
-      { ALT: () => this.SUBRULE(this.regularFunctionCall) },
-      { ALT: () => this.SUBRULE(this.filterCall) },
-      { ALT: () => this.SUBRULE(this.repeatForm) },
-      { ALT: () => this.SUBRULE(this.critForm) },
-      {
-        ALT: () => {
-          this.CONSUME(LParen)
-          this.SUBRULE(this.optionalWhitespace) // Allow whitespace after the opening parenthesis
-          this.SUBRULE(this.expression, { LABEL: "wrappedExpression" })
-          this.SUBRULE2(this.optionalWhitespace) // Allow whitespace before the closing parenthesis
-          this.CONSUME2(RParen)
+    this.OR({
+      DEF: [
+        { ALT: () => this.CONSUME(NumberLiteral) },
+        { ALT: () => this.CONSUME(BooleanLiteral) },
+        { ALT: () => this.CONSUME(NamedExpression) },
+        { ALT: () => this.SUBRULE(this.listExpression) },
+        { ALT: () => this.SUBRULE(this.regularFunctionCall) },
+        { ALT: () => this.SUBRULE(this.filterCall) },
+        { ALT: () => this.SUBRULE(this.repeatForm) },
+        { ALT: () => this.SUBRULE(this.critForm) },
+        {
+          ALT: () => {
+            this.CONSUME(LParen)
+            this.SUBRULE(this.optionalWhitespace) // Allow whitespace after the opening parenthesis
+            this.SUBRULE(this.expression, { LABEL: "wrappedExpression" })
+            this.SUBRULE2(this.optionalWhitespace) // Allow whitespace before the closing parenthesis
+            this.CONSUME2(RParen)
+          },
         },
-      },
-    ])
+      ],
+      ERR_MSG: "数字字面量、布尔值字面量、列表字面量、命名表达式、函数调用或括号包裹的表达式",
+    })
   })
 
   public readonly listExpression = this.RULE("listExpression", () => {
@@ -142,11 +161,14 @@ export class DiceParser extends CstParser {
     this.SUBRULE(this.optionalWhitespace) // Allow whitespace after the opening bracket
     this.OPTION(() => {
       this.SUBRULE(this.expression, { LABEL: "element" })
-      this.MANY(() => {
-        this.SUBRULE2(this.optionalWhitespace) // Allow whitespace before the comma
-        this.CONSUME(Comma)
-        this.SUBRULE3(this.optionalWhitespace) // Allow whitespace after the comma
-        this.SUBRULE2(this.expression, { LABEL: "elements" })
+      this.MANY({
+        GATE: () => this.nextAfterOptionalWhitespaceIs(Comma),
+        DEF: () => {
+          this.SUBRULE2(this.optionalWhitespace) // Allow whitespace before the comma
+          this.CONSUME(Comma)
+          this.SUBRULE3(this.optionalWhitespace) // Allow whitespace after the comma
+          this.SUBRULE2(this.expression, { LABEL: "elements" })
+        },
       })
     })
     this.SUBRULE4(this.optionalWhitespace) // Allow whitespace before the closing bracket
@@ -158,11 +180,14 @@ export class DiceParser extends CstParser {
     this.CONSUME(LParen)
     this.SUBRULE(this.optionalWhitespace) // Allow whitespace after the opening parenthesis
     this.SUBRULE(this.expression, { LABEL: "arg" })
-    this.MANY(() => {
-      this.SUBRULE2(this.optionalWhitespace) // Allow whitespace before the comma
-      this.CONSUME(Comma)
-      this.SUBRULE3(this.optionalWhitespace) // Allow whitespace after the comma
-      this.SUBRULE2(this.expression, { LABEL: "args" })
+    this.MANY({
+      GATE: () => this.nextAfterOptionalWhitespaceIs(Comma),
+      DEF: () => {
+        this.SUBRULE2(this.optionalWhitespace) // Allow whitespace before the comma
+        this.CONSUME(Comma)
+        this.SUBRULE3(this.optionalWhitespace) // Allow whitespace after the comma
+        this.SUBRULE2(this.expression, { LABEL: "args" })
+      },
     })
     this.SUBRULE4(this.optionalWhitespace) // Allow whitespace before the closing parenthesis
     this.CONSUME2(RParen)
@@ -174,11 +199,14 @@ export class DiceParser extends CstParser {
     this.CONSUME(LParen)
     this.SUBRULE(this.optionalWhitespace) // Allow whitespace after the opening parenthesis
     this.SUBRULE(this.expression, { LABEL: "arg" })
-    this.MANY(() => {
-      this.SUBRULE2(this.optionalWhitespace) // Allow whitespace before the comma
-      this.CONSUME(Comma)
-      this.SUBRULE3(this.optionalWhitespace) // Allow whitespace after the comma
-      this.SUBRULE2(this.expression, { LABEL: "args" })
+    this.MANY({
+      GATE: () => this.nextAfterOptionalWhitespaceIs(Comma),
+      DEF: () => {
+        this.SUBRULE2(this.optionalWhitespace) // Allow whitespace before the comma
+        this.CONSUME(Comma)
+        this.SUBRULE3(this.optionalWhitespace) // Allow whitespace after the comma
+        this.SUBRULE2(this.expression, { LABEL: "args" })
+      },
     })
     this.SUBRULE4(this.optionalWhitespace) // Allow whitespace before the closing parenthesis
     this.CONSUME2(RParen)
@@ -207,13 +235,16 @@ export class DiceParser extends CstParser {
   })
 
   public readonly modifier = this.RULE("modifier", () => {
-    this.OR([
-      { ALT: () => this.SUBRULE(this.keepDropModifier) },
-      { ALT: () => this.SUBRULE(this.minMaxModifier) },
-      { ALT: () => this.SUBRULE(this.rerollModifier) },
-      { ALT: () => this.SUBRULE(this.explodeModifier) },
-      { ALT: () => this.SUBRULE(this.successFailureModifier) },
-    ])
+    this.OR({
+      DEF: [
+        { ALT: () => this.SUBRULE(this.keepDropModifier) },
+        { ALT: () => this.SUBRULE(this.minMaxModifier) },
+        { ALT: () => this.SUBRULE(this.rerollModifier) },
+        { ALT: () => this.SUBRULE(this.explodeModifier) },
+        { ALT: () => this.SUBRULE(this.successFailureModifier) },
+      ],
+      ERR_MSG: "keep/drop、min/max、reroll、explode 或 success/failure 修饰符",
+    })
   })
 
   public readonly keepDropModifier = this.RULE("keepDropModifier", () => {
@@ -251,28 +282,31 @@ export class DiceParser extends CstParser {
   })
 
   public readonly limit = this.RULE("limit", () =>
-    this.OR([
-      {
-        ALT: () => {
-          this.CONSUME(Lt)
-          this.SUBRULE(this.atom, { LABEL: "timeLimit1" })
-          this.OPTION(() => {
-            this.CONSUME(Lc)
-            this.SUBRULE2(this.atom, { LABEL: "countLimit1" })
-          })
+    this.OR({
+      DEF: [
+        {
+          ALT: () => {
+            this.CONSUME(Lt)
+            this.SUBRULE(this.atom, { LABEL: "timeLimit1" })
+            this.OPTION(() => {
+              this.CONSUME(Lc)
+              this.SUBRULE2(this.atom, { LABEL: "countLimit1" })
+            })
+          },
         },
-      },
-      {
-        ALT: () => {
-          this.CONSUME2(Lc)
-          this.SUBRULE3(this.atom, { LABEL: "countLimit2" })
-          this.OPTION2(() => {
-            this.CONSUME2(Lt)
-            this.SUBRULE4(this.atom, { LABEL: "timeLimit2" })
-          })
+        {
+          ALT: () => {
+            this.CONSUME2(Lc)
+            this.SUBRULE3(this.atom, { LABEL: "countLimit2" })
+            this.OPTION2(() => {
+              this.CONSUME2(Lt)
+              this.SUBRULE4(this.atom, { LABEL: "timeLimit2" })
+            })
+          },
         },
-      },
-    ])
+      ],
+      ERR_MSG: "时间限制、次数限制或两者",
+    })
   )
   constructor() {
     super(allTokens, {
