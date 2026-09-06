@@ -21,7 +21,7 @@ export function buildExpressionHir(node: ExpressionCstNode, env: HirEnv): HIRNod
 export function buildAtomHir(node: AtomCstNode, env: HirEnv): HIRNode {
   if (node.children.NumberLiteral) {
     const token = node.children.NumberLiteral[0]
-    const value = parseFloat(token.image)
+    const value = token.image.toLowerCase() === "inf" ? Number.POSITIVE_INFINITY : Number(token.image)
     return { kind: "number", value: { kind: "constant", value } }
   }
   if (node.children.BooleanLiteral) {

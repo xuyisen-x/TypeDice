@@ -86,7 +86,7 @@ describe("Other HIR integration behavior", () => {
       })
     })
 
-    it.fails("places an EOF error after a trailing line break", () => {
+    it("places an EOF error after a trailing line break", () => {
       const result = buildHirFromString("1 +\n", emptyEnv)
       expect(result).toMatchObject({
         ok: false,

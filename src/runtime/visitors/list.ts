@@ -21,7 +21,6 @@ import {
   successPoolValue,
   withRollBarrier,
 } from "../utils.js"
-import { RuntimeException } from "../errors.js"
 
 export function visitList(env: EvaluationEnvironment, value: ListType, active: boolean): OutputNode {
   switch (value.kind) {
@@ -267,21 +266,12 @@ function visitListBinary(env: EvaluationEnvironment, value: ListBinaryType, acti
             return item - numberValue(rhs)
           case "multiply":
             return item * numberValue(rhs)
-          case "divide": {
-            const divisor = numberValue(rhs)
-            if (divisor === 0) throw new RuntimeException("除数不能为零")
-            return item / divisor
-          }
-          case "intDivide": {
-            const divisor = numberValue(rhs)
-            if (divisor === 0) throw new RuntimeException("除数不能为零")
-            return Math.floor(item / divisor)
-          }
-          case "modulo": {
-            const divisor = numberValue(rhs)
-            if (divisor === 0) throw new RuntimeException("除数不能为零")
-            return item % divisor
-          }
+          case "divide":
+            return item / numberValue(rhs)
+          case "intDivide":
+            return Math.floor(item / numberValue(rhs))
+          case "modulo":
+            return item % numberValue(rhs)
           default:
             return assertNever(value)
         }
@@ -324,15 +314,12 @@ function visitListBinary(env: EvaluationEnvironment, value: ListBinaryType, acti
           case "multiplyReverse":
             return numberValue(lhs) * item
           case "divideReverse": {
-            if (item === 0) throw new RuntimeException("除数不能为零")
             return numberValue(lhs) / item
           }
           case "intDivideReverse": {
-            if (item === 0) throw new RuntimeException("除数不能为零")
             return Math.floor(numberValue(lhs) / item)
           }
           case "moduloReverse": {
-            if (item === 0) throw new RuntimeException("除数不能为零")
             return numberValue(lhs) % item
           }
           default:

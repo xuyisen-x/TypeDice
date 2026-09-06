@@ -212,9 +212,11 @@ export const Lc = keyword("Lc", "lc")
 // 1e3
 // 1.5e-3
 // .5E+2
+// NaN
+// Inf
 export const NumberLiteral = createToken({
   name: "NumberLiteral",
-  pattern: /(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?/,
+  pattern: /(?:NaN|Inf|(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?)/i,
   label: "数字字面量",
 })
 

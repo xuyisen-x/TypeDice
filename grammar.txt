@@ -336,12 +336,16 @@ limit
 (*   1.                                                         *)
 (*   1e3                                                        *)
 (*   1.5e-3                                                     *)
+(*   NaN                                                        *)
+(*   Inf                                                        *)
 (*                                                              *)
 (* Leading +/- are unary operators, not part of number.          *)
 (* ============================================================ *)
 
 number
-    = integer_part [ "." [ digit { digit } ] ] [ exponent ]
+    = "NaN"
+    | "Inf"
+    | integer_part [ "." [ digit { digit } ] ] [ exponent ]
     | "." digit { digit } [ exponent ] ;
 
 integer_part

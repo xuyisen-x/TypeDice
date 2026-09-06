@@ -9,7 +9,6 @@ import {
   numberMultiplyNumber,
   numberPlusNumber,
 } from "./number.js"
-import { hirErrorToken } from "../errors.js"
 
 function mapConstantList(
   list: ListType,
@@ -46,9 +45,6 @@ export function numberMultiplyList(lhs: NumberType, rhs: ListType): ListType {
   )
 }
 export function numberDivideList(lhs: NumberType, rhs: ListType, op: IToken): ListType {
-  if (rhs.kind === "explicit" && rhs.value.some((item) => item.kind === "constant" && item.value === 0)) {
-    hirErrorToken("除数不能为零", op)
-  }
   return (
     mapConstantList(rhs, lhs, (item, number) => numberDivideNumber(number, item, op)) ?? {
       kind: "binary",
@@ -57,9 +53,6 @@ export function numberDivideList(lhs: NumberType, rhs: ListType, op: IToken): Li
   )
 }
 export function numberIntDivideList(lhs: NumberType, rhs: ListType, op: IToken): ListType {
-  if (rhs.kind === "explicit" && rhs.value.some((item) => item.kind === "constant" && item.value === 0)) {
-    hirErrorToken("除数不能为零", op)
-  }
   return (
     mapConstantList(rhs, lhs, (item, number) => numberIntDivideNumber(number, item, op)) ?? {
       kind: "binary",
@@ -68,9 +61,6 @@ export function numberIntDivideList(lhs: NumberType, rhs: ListType, op: IToken):
   )
 }
 export function numberModuloList(lhs: NumberType, rhs: ListType, op: IToken): ListType {
-  if (rhs.kind === "explicit" && rhs.value.some((item) => item.kind === "constant" && item.value === 0)) {
-    hirErrorToken("除数不能为零", op)
-  }
   return (
     mapConstantList(rhs, lhs, (item, number) => numberModuloNumber(number, item, op)) ?? {
       kind: "binary",
@@ -104,9 +94,6 @@ export function listMultiplyNumber(lhs: ListType, rhs: NumberType): ListType {
   )
 }
 export function listDivideNumber(lhs: ListType, rhs: NumberType, op: IToken): ListType {
-  if (rhs.kind === "constant" && rhs.value === 0) {
-    hirErrorToken("除数不能为零", op)
-  }
   return (
     mapConstantList(lhs, rhs, (item, number) => numberDivideNumber(item, number, op)) ?? {
       kind: "binary",
@@ -115,9 +102,6 @@ export function listDivideNumber(lhs: ListType, rhs: NumberType, op: IToken): Li
   )
 }
 export function listIntDivideNumber(lhs: ListType, rhs: NumberType, op: IToken): ListType {
-  if (rhs.kind === "constant" && rhs.value === 0) {
-    hirErrorToken("除数不能为零", op)
-  }
   return (
     mapConstantList(lhs, rhs, (item, number) => numberIntDivideNumber(item, number, op)) ?? {
       kind: "binary",
@@ -126,9 +110,6 @@ export function listIntDivideNumber(lhs: ListType, rhs: NumberType, op: IToken):
   )
 }
 export function listModuloNumber(lhs: ListType, rhs: NumberType, op: IToken): ListType {
-  if (rhs.kind === "constant" && rhs.value === 0) {
-    hirErrorToken("除数不能为零", op)
-  }
   return (
     mapConstantList(lhs, rhs, (item, number) => numberModuloNumber(item, number, op)) ?? {
       kind: "binary",

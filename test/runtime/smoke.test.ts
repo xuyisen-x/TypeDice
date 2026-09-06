@@ -94,10 +94,23 @@ describe("Runtime evaluation", () => {
     expect(evaluatedValue(output)).toEqual({ kind: "list", value: [-1, 1] })
   })
 
-  it("rejects a dynamically computed zero divisor", () => {
+  it.each([
+    ["1 / (1d2 - 1)", Number.POSITIVE_INFINITY],
+    ["-1 / (1d2 - 1)", Number.NEGATIVE_INFINITY],
+    ["0 / (1d2 - 1)", Number.NaN],
+    ["1 % (1d2 - 1)", Number.NaN],
+  ])("evaluates a dynamically computed zero divisor in %s", (input, expected) => {
     const source = sequenceRandom(1)
-    expect(() => evaluateHirOrThrow(buildHirOrThrow("1 / (1d2 - 1)"), { random: source.random })).toThrow(
-      "除数不能为零"
-    )
+    expect(evaluatedValue(evaluateHirOrThrow(buildHirOrThrow(input), { random: source.random }).output)).toEqual({
+      kind: "number",
+      value: expected,
+    })
+  })
+
+  it("evaluates zero divisors in a dynamic list operation", () => {
+    const source = sequenceRandom(1)
+    expect(
+      evaluatedValue(evaluateHirOrThrow(buildHirOrThrow("1 / [1d2 - 1, 1]"), { random: source.random }).output)
+    ).toEqual({ kind: "list", value: [Number.POSITIVE_INFINITY, 1] })
   })
 })

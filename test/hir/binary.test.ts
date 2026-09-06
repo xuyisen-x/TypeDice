@@ -68,8 +68,17 @@ describe("HIR arithmetic", () => {
   })
 
   describe("number divided by zero", () => {
-    it.each(["1 / 0", "1.6 % 0", "1d7 // 0", "1 + 2 / (1 - 1)"])("rejects %s", (input) => {
-      expect(() => buildHirOrThrow(input)).toThrow(HIRBuilderError)
+    it.each([
+      ["1 / 0", "Inf"],
+      ["-1 / 0", "-Inf"],
+      ["0 / 0", "NaN"],
+      ["1.6 % 0", "NaN"],
+      ["1 // 0", "Inf"],
+      ["-1 // 0", "-Inf"],
+      ["1 + 2 / (1 - 1)", "Inf"],
+      ["1d7 // 0", "1d7 // 0"],
+    ])("folds %s into %s", (input, expected) => {
+      expect(canonicalize(input)).toBe(expected)
     })
   })
 
@@ -155,13 +164,15 @@ describe("HIR arithmetic", () => {
     })
   })
 
-  describe("boolean short-circuiting and divided by zero", () => {
-    it.each([["false && (1 / 0)"], ["true || (1 / 0)"], ["(1 / 0) && false"], ["(1 / 0) || true"]])(
-      "reject %s",
-      (input) => {
-        expect(() => buildHirOrThrow(input)).toThrow(HIRBuilderError)
-      }
-    )
+  describe("boolean folding with division by zero", () => {
+    it.each([
+      ["false && (1 / 0 > 0)", "false"],
+      ["true || (1 / 0 > 0)", "true"],
+      ["(1 / 0 > 0) && false", "false"],
+      ["(1 / 0 > 0) || true", "true"],
+    ])("folds %s into %s", (input, expected) => {
+      expect(canonicalize(input)).toBe(expected)
+    })
   })
 
   describe("boolean invalid comparison expressions", () => {
@@ -233,11 +244,15 @@ describe("HIR arithmetic", () => {
   })
 
   describe("broadcast number to list divided by zero", () => {
-    it.each(["1 / [0, 1]", "1 % [0, 1]", "1 // [0, 1]", "[1, 2] / 0", "[1, 2] % 0", "[1, 2] // 0"])(
-      "rejects %s",
-      (input) => {
-        expect(() => buildHirOrThrow(input)).toThrow(HIRBuilderError)
-      }
-    )
+    it.each([
+      ["1 / [0, 1]", "[Inf, 1]"],
+      ["1 % [0, 1]", "[NaN, 0]"],
+      ["1 // [0, 1]", "[Inf, 1]"],
+      ["[1, 2] / 0", "[Inf, Inf]"],
+      ["[1, 2] % 0", "[NaN, NaN]"],
+      ["[1, 2] // 0", "[Inf, Inf]"],
+    ])("folds %s into %s", (input, expected) => {
+      expect(canonicalize(input)).toBe(expected)
+    })
   })
 })

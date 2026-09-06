@@ -74,12 +74,19 @@ function parserErrorToLocation(error: IRecognitionException): StandardErrorLocat
     (previousLocation.endOffset !== undefined
       ? previousLocation.endOffset
       : /* v8 ignore next -- @preserve */ previousLocation.startOffset) + 1
+  /* previousLocation can only exist when previousToken exists. */
+  const previousImage = previousToken?.image ?? /* v8 ignore next -- @preserve */ ""
+  const lineBreaks = [...previousImage.matchAll(/\r\n|[\n\r]/g)]
+  const lastLineBreak = lineBreaks.at(-1)
   const line =
-    previousLocation.endLine !== undefined
-      ? previousLocation.endLine
-      : /* v8 ignore next -- @preserve */ previousLocation.startLine
-  const column =
-    previousLocation.endColumn !== undefined
+    lineBreaks.length > 0 && previousLocation.startLine !== undefined
+      ? previousLocation.startLine + lineBreaks.length
+      : previousLocation.endLine !== undefined
+        ? previousLocation.endLine
+        : /* v8 ignore next -- @preserve */ previousLocation.startLine
+  const column = lastLineBreak
+    ? previousImage.length - ((lastLineBreak.index ?? 0) + lastLineBreak[0].length) + 1
+    : previousLocation.endColumn !== undefined
       ? previousLocation.endColumn + 1
       : /* v8 ignore next -- @preserve */ previousLocation.startColumn
 

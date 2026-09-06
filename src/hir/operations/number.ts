@@ -1,6 +1,5 @@
 import type { IToken } from "chevrotain"
 import type { BooleanType, NumberType } from "../types.js"
-import { hirErrorToken } from "../errors.js"
 
 function additiveOperation(lhs: NumberType, rhs: NumberType, positive: boolean): NumberType {
   type AdditiveParts = {
@@ -183,9 +182,6 @@ export function numberMultiplyNumber(lhs: NumberType, rhs: NumberType): NumberTy
   }
 }
 export function numberDivideNumber(lhs: NumberType, rhs: NumberType, op: IToken): NumberType {
-  if (rhs.kind === "constant" && rhs.value === 0) {
-    hirErrorToken("除数不能为零", op)
-  }
   if (lhs.kind === "constant" && rhs.kind === "constant") {
     return { kind: "constant", value: lhs.value / rhs.value }
   } else if (rhs.kind === "constant" && rhs.value === 1) {
@@ -195,9 +191,6 @@ export function numberDivideNumber(lhs: NumberType, rhs: NumberType, op: IToken)
   }
 }
 export function numberIntDivideNumber(lhs: NumberType, rhs: NumberType, op: IToken): NumberType {
-  if (rhs.kind === "constant" && rhs.value === 0) {
-    hirErrorToken("除数不能为零", op)
-  }
   if (lhs.kind === "constant" && rhs.kind === "constant") {
     return { kind: "constant", value: Math.floor(lhs.value / rhs.value) }
   } else {
@@ -205,9 +198,6 @@ export function numberIntDivideNumber(lhs: NumberType, rhs: NumberType, op: ITok
   }
 }
 export function numberModuloNumber(lhs: NumberType, rhs: NumberType, op: IToken): NumberType {
-  if (rhs.kind === "constant" && rhs.value === 0) {
-    hirErrorToken("除数不能为零", op)
-  }
   if (lhs.kind === "constant" && rhs.kind === "constant") {
     return { kind: "constant", value: lhs.value % rhs.value }
   } else {

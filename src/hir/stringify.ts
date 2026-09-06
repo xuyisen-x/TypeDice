@@ -57,16 +57,15 @@ function renderTernary(condition: Rendered, trueValue: Rendered, falseValue: Ren
 
 function renderConstant(value: number): Rendered {
   if (Number.isNaN(value)) {
-    // Both literals are valid, and folding the subtraction produces NaN again.
-    return { text: "1e309 - 1e309", precedence: PRECEDENCE.additive }
+    return { text: "NaN", precedence: PRECEDENCE.atom }
   }
 
   if (value === Number.POSITIVE_INFINITY) {
-    return { text: "1e309", precedence: PRECEDENCE.atom }
+    return { text: "Inf", precedence: PRECEDENCE.atom }
   }
 
   if (value === Number.NEGATIVE_INFINITY) {
-    return { text: "-1e309", precedence: PRECEDENCE.unary }
+    return { text: "-Inf", precedence: PRECEDENCE.unary }
   }
 
   const text = formatFiniteNumber(value)

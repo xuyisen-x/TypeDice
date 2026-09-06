@@ -43,9 +43,9 @@ export function visitNumber(env: EvaluationEnvironment, value: NumberType, activ
 
 function visitAtomNumber(env: EvaluationEnvironment, value: number, active: boolean): OutputNode {
   const [text, precedence] = (() => {
-    if (Number.isNaN(value)) return ["1e309 - 1e309", PRECEDENCE.additive]
-    if (value === Number.POSITIVE_INFINITY) return ["1e309", PRECEDENCE.atom]
-    if (value === Number.NEGATIVE_INFINITY) return ["-1e309", PRECEDENCE.unary]
+    if (Number.isNaN(value)) return ["NaN", PRECEDENCE.atom]
+    if (value === Number.POSITIVE_INFINITY) return ["Inf", PRECEDENCE.atom]
+    if (value === Number.NEGATIVE_INFINITY) return ["-Inf", PRECEDENCE.unary]
     const text = formatFiniteNumber(value)
     if (text.startsWith("-")) return [text, PRECEDENCE.unary]
     return [text, PRECEDENCE.atom]
@@ -79,20 +79,11 @@ function visitNumberBinary(env: EvaluationEnvironment, value: NumberBinaryType, 
     case "multiply":
       return visitNumberMultiply(env, value, active)
     case "divide":
-      return visitNumberPairBinary(env, value.lhs, "/", value.rhs, active, (lhs, rhs) => {
-        if (rhs === 0) throw new RuntimeException("除数不能为零")
-        return lhs / rhs
-      })
+      return visitNumberPairBinary(env, value.lhs, "/", value.rhs, active, (lhs, rhs) => lhs / rhs)
     case "intDivide":
-      return visitNumberPairBinary(env, value.lhs, "//", value.rhs, active, (lhs, rhs) => {
-        if (rhs === 0) throw new RuntimeException("除数不能为零")
-        return Math.floor(lhs / rhs)
-      })
+      return visitNumberPairBinary(env, value.lhs, "//", value.rhs, active, (lhs, rhs) => Math.floor(lhs / rhs))
     case "modulo":
-      return visitNumberPairBinary(env, value.lhs, "%", value.rhs, active, (lhs, rhs) => {
-        if (rhs === 0) throw new RuntimeException("除数不能为零")
-        return lhs % rhs
-      })
+      return visitNumberPairBinary(env, value.lhs, "%", value.rhs, active, (lhs, rhs) => lhs % rhs)
     default:
       return assertNever(value)
   }
