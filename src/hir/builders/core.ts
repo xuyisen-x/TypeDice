@@ -33,8 +33,8 @@ export function buildAtomHir(node: AtomCstNode, env: HirEnv): HIRNode {
     const token = node.children.NamedExpression[0]
     const name = token.image.slice(2, -1) // Remove ${ and }
     const resolved = env.resolveNamedExpression(name)
-    if (!resolved) hirErrorToken(`未定义的命名表达式: ${name}`, token)
-    return resolved
+    if (resolved.kind === "value") return resolved.value
+    hirErrorToken(resolved.message, token)
   }
   if (node.children.wrappedExpression) return buildExpressionHir(node.children.wrappedExpression[0], env)
   if (node.children.listExpression) return buildListExpression(node.children.listExpression[0], env)

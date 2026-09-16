@@ -1,8 +1,16 @@
-import type { EvaluationOptions, EvaluationResult, HIRNode, StandardErrorLocation } from "../src/index.js"
+import type {
+  EvaluationOptions,
+  EvaluationResult,
+  HIRNode,
+  resolveNamedExpressionResult,
+  StandardErrorLocation,
+} from "../src/index.js"
 import { buildHirFromString, evaluateHir, hirToString } from "../src/index.js"
 
 /* v8 ignore next -- @preserve */
-export const emptyEnv = (_name: string): HIRNode | undefined => undefined
+export const emptyEnv = (_name: string): resolveNamedExpressionResult => {
+  return { kind: "error", message: `未定义的命名表达式: ${_name}` }
+}
 
 export class ParserError extends Error {
   constructor(

@@ -1,4 +1,8 @@
-export type HirEnv = { resolveNamedExpression: (name: string) => HIRNode | undefined }
+export type resolveNamedExpressionResult = { kind: "value"; value: HIRNode } | { kind: "error"; message: string }
+
+export type HirEnv = {
+  resolveNamedExpression: (name: string) => resolveNamedExpressionResult
+}
 
 export type ModParamType =
   | { kind: "equal"; value: NumberType }

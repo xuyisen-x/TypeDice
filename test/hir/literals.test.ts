@@ -87,18 +87,18 @@ describe("HIR atoms", () => {
   })
 
   it("valid named expressions", () => {
-    const x = buildHirOrThrow("1d6 + 2d4", () => undefined)
-    const y = buildHirOrThrow("3 + 3d6", () => undefined)
+    const x = buildHirOrThrow("1d6 + 2d4")
+    const y = buildHirOrThrow("3 + 3d6")
     const folded = canonicalize("${x} + ${y}", (name) => {
-      if (name === "x") return x
-      if (name === "y") return y
-      return undefined
+      if (name === "x") return { kind: "value", value: x }
+      if (name === "y") return { kind: "value", value: y }
+      return { kind: "error", message: `未定义的命名表达式: ${name}` }
     })
     expect(folded).toBe("4d6 + 2d4 + 3")
   })
 
   it("invalid named expressions", () => {
-    expect(() => canonicalize("${x} + 1", () => undefined)).toThrow(HIRBuilderError)
+    expect(() => canonicalize("${x} + 1")).toThrow(HIRBuilderError)
   })
 
   describe("invalid dice expressions", () => {

@@ -1,4 +1,4 @@
-import type { HIRNode } from "./types.js"
+import type { HIRNode, resolveNamedExpressionResult } from "./types.js"
 import type { Result } from "../utils.js"
 import type { ExpressionEntryCstNode } from "../syntax/generated/cst.js"
 import { type HirBuildError, HirBuildException } from "./errors.js"
@@ -9,7 +9,7 @@ import { buildExpressionEntryHir } from "./builders/core.js"
 
 export function buildHir(
   node: ExpressionEntryCstNode,
-  resolveNamedExpression: (name: string) => HIRNode | undefined
+  resolveNamedExpression: (name: string) => resolveNamedExpressionResult
 ): Result<HIRNode, HirBuildError> {
   try {
     const hir = buildExpressionEntryHir(node, { resolveNamedExpression })

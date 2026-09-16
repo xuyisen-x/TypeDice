@@ -134,7 +134,9 @@ describe("Other HIR integration behavior", () => {
 
     const result = canonicalize("${x} + ${x}", (name) => {
       calls += 1
-      return name === "x" ? resolved : undefined
+      return name === "x"
+        ? { kind: "value", value: resolved }
+        : { kind: "error", message: `未定义的命名表达式: ${name}` }
     })
 
     expect(calls).toBe(2)

@@ -16,7 +16,7 @@ export type {
 export { evaluateHir } from "./runtime/evaluate.js"
 
 import type { StandardError } from "./errors.js"
-import type { HIRNode } from "./hir/types.js"
+import type { HIRNode, resolveNamedExpressionResult } from "./hir/types.js"
 import { lexDice } from "./syntax/lexer.js"
 import type { Result } from "./utils.js"
 import {
@@ -29,7 +29,7 @@ import { buildHir } from "./hir/builder.js"
 
 export function buildHirFromString(
   input: string,
-  env: (name: string) => HIRNode | undefined
+  env: (name: string) => resolveNamedExpressionResult
 ): Result<HIRNode, StandardError> {
   const tokens = lexDice(input)
   if (!tokens.ok) return { ok: false, error: lexingErrorToStandardError(tokens.error[0]) }
