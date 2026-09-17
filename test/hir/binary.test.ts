@@ -210,6 +210,86 @@ describe("HIR arithmetic", () => {
     })
   })
 
+  describe("string set operations", () => {
+    it.each([
+      ['{"a", "b", "c"} - {"b", "d"}', '{"a", "c"}'],
+      ['{"a", "b", "c"} & {"b", "c", "d"}', '{"b", "c"}'],
+      ['{"a", "b", "c"} ^ {"b", "c", "d"}', '{"a", "d"}'],
+      ['{"a", "b", "c"} | {"b", "c", "d"}', '{"a", "b", "c", "d"}'],
+      ['{} - {"a"}', "{}"],
+      ['{} & {"a"}', "{}"],
+      ['{} ^ {"a"}', '{"a"}'],
+      ['{} | {"a"}', '{"a"}'],
+      ['{"a", "b"} - {"b"} - {"a"}', "{}"],
+    ])("folds %s into %s", (input, expected) => {
+      expect(canonicalize(input)).toBe(expected)
+    })
+
+    it.each([
+      ['{"x"} | {} - {"x"}', '{"x"}'],
+      ['{"x"} | {} ^ {"x"}', '{"x"}'],
+      ['{"x"} ^ {"x"} & {}', '{"x"}'],
+      ['{"x"} ^ {"x"} - {"x"}', '{"x"}'],
+    ])("respects string set precedence in %s", (input, expected) => {
+      expect(canonicalize(input)).toBe(expected)
+    })
+
+    const a = '{1d2 = 1 ? "a" : "A"}'
+    const b = '{1d2 = 1 ? "b" : "B"}'
+    const c = '{1d2 = 1 ? "c" : "C"}'
+
+    it.each([
+      [`(${a} | ${b}) ^ ${c}`, `(${a} | ${b}) ^ ${c}`],
+      [`${a} & (${b} ^ ${c})`, `${a} & (${b} ^ ${c})`],
+      [`(${a} & ${b}) - ${c}`, `(${a} & ${b}) - ${c}`],
+      [`${a} - (${b} - ${c})`, `${a} - (${b} - ${c})`],
+      [`${a} | ${b} ^ ${c} & ${a} - ${b}`, `${a} | ${b} ^ ${c} & ${a} - ${b}`],
+    ])("preserves required parentheses in %s", (input, expected) => {
+      expect(canonicalize(input)).toBe(expected)
+    })
+
+    it.each(['{"a"} - 1', '1 & {"a"}', '{"a"} ^ [1]', 'true | {"a"}'])("rejects %s", (input) => {
+      expect(() => buildHirOrThrow(input)).toThrow(HIRBuilderError)
+    })
+  })
+
+  describe("string set membership", () => {
+    it.each([
+      ['"a" in {"a", "b", "c"}', "true"],
+      ['"d" in {"a", "b", "c"}', "false"],
+      ['"a" in {}', "false"],
+      ['"a"in{"a"}', "true"],
+      ['"a" IN {"a"}', "true"],
+      ['"a" in {"A"}', "false"],
+      ['"\\u0061" in {"a"}', "true"],
+    ])("folds %s into %s", (input, expected) => {
+      expect(canonicalize(input)).toBe(expected)
+    })
+
+    it.each([
+      ['"a" in {} | {"a"}', "true"],
+      ['"a" in {"a"} ^ {"a"}', "false"],
+      ['"a" in {"a"} & {}', "false"],
+      ['"a" in {"a"} - {"a"}', "false"],
+      ['"a" in {"a"} && true', "true"],
+    ])("respects membership precedence in %s", (input, expected) => {
+      expect(canonicalize(input)).toBe(expected)
+    })
+
+    it.each([
+      ['"a" in ({1d2 = 1 ? "a" : "b"} | {"c"})', '"a" in {1d2 = 1 ? "a" : "b"} | {"c"}'],
+      ['(1d2 = 1 ? "a" : "b") in {"a"}', '(1d2 = 1 ? "a" : "b") in {"a"}'],
+      ['"a" in (1d2 = 1 ? {"a"} : {"b"})', '"a" in (1d2 = 1 ? {"a"} : {"b"})'],
+      ['!("a" in {1d2 = 1 ? "a" : "b"})', '!("a" in {1d2 = 1 ? "a" : "b"})'],
+    ])("canonicalizes dynamic membership %s as %s", (input, expected) => {
+      expect(canonicalize(input)).toBe(expected)
+    })
+
+    it.each(['1 in {"1"}', '"a" in [1]', '{"a"} in {"a"}', '"a" in "a"'])("rejects %s", (input) => {
+      expect(() => buildHirOrThrow(input)).toThrow(HIRBuilderError)
+    })
+  })
+
   describe("broadcast number to list", () => {
     it.each([
       ["1 + [2, 3]", "[3, 4]"],

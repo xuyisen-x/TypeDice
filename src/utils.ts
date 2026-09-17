@@ -22,15 +22,23 @@ export function formatFiniteNumber(value: number): string {
   return rounded.toString()
 }
 
+export function parseStringLiteral(image: string): string {
+  return JSON.parse(image) as string
+}
+
 export const PRECEDENCE = {
   ternary: 0,
   or: 1,
   and: 2,
   compare: 3,
   concat: 4,
-  additive: 5,
-  multiplicative: 6,
-  unary: 7,
-  dice: 8,
-  atom: 9,
+  membership: 5,
+  setUnion: 6,
+  setSymmetricDifference: 7,
+  setIntersection: 8,
+  additive: 9,
+  multiplicative: 10,
+  unary: 11,
+  dice: 12,
+  atom: 13,
 } as const

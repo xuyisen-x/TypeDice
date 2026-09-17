@@ -6,7 +6,7 @@ describe("Other HIR integration behavior", () => {
   describe("standard errors", () => {
     it.each([
       [
-        "true | false",
+        "true ~ false",
         {
           kind: "lexer",
           location: {
@@ -16,7 +16,7 @@ describe("Other HIR integration behavior", () => {
             endLine: 1,
             startColumn: 6,
           },
-          message: '无法识别字符 "|"',
+          message: '无法识别字符 "~"',
         },
       ],
       [
@@ -61,7 +61,7 @@ describe("Other HIR integration behavior", () => {
             startColumn: 3,
             endColumn: 3,
           },
-          message: "无法将布尔类型与数字类型进行二元运算",
+          message: '二元运算符"+"不适用于数字类型与布尔类型',
         },
       ],
     ] as const)("standardizes the first error from %s", (input, expectedError) => {
@@ -126,6 +126,16 @@ describe("Other HIR integration behavior", () => {
     expect(rewritten).not.toBe(source)
     expect(hirToString(rewritten)).toBe("2d6 + [4d8]")
     expect(hirToString(source)).toBe(before)
+  })
+
+  it.each([
+    ['@crit(1d2 = 1 ? "a" : "b")', '2d2 = 1 ? "a" : "b"'],
+    ['@crit(1d2 = 1 ? {"a"} : {"b"})', '2d2 = 1 ? {"a"} : {"b"}'],
+    ['@crit({1d2 = 1 ? "a" : "b"})', '{2d2 = 1 ? "a" : "b"}'],
+    ['@crit({1d2 = 1 ? "a" : "b"} | {1d4 = 1 ? "c" : "d"})', '{2d2 = 1 ? "a" : "b"} | {2d4 = 1 ? "c" : "d"}'],
+    ['@crit((1d2 = 1 ? "a" : "b") in {1d4 = 1 ? "a" : "c"})', '(2d2 = 1 ? "a" : "b") in {2d4 = 1 ? "a" : "c"}'],
+  ])("rewrites critical dice inside string values in %s", (input, expected) => {
+    expect(canonicalize(input)).toBe(expected)
   })
 
   it("resolves every named-expression occurrence without mutating the resolved HIR", () => {

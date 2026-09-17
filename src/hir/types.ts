@@ -18,6 +18,23 @@ export type HIRNode =
   | { kind: "number"; value: NumberType }
   | { kind: "list"; value: ListType }
   | { kind: "boolean"; value: BooleanType }
+  | { kind: "string"; value: StringType }
+  | { kind: "stringSet"; value: StringSetType }
+
+export type StringType =
+  | { kind: "constant"; value: string }
+  | { kind: "ternary"; condition: BooleanType; trueValue: StringType; falseValue: StringType }
+
+export type StringSetType =
+  | { kind: "explicit"; value: StringType[] }
+  | { kind: "binary"; value: StringSetBinaryType }
+  | { kind: "ternary"; condition: BooleanType; trueValue: StringSetType; falseValue: StringSetType }
+
+export type StringSetBinaryType =
+  | { kind: "difference"; lhs: StringSetType; rhs: StringSetType }
+  | { kind: "intersection"; lhs: StringSetType; rhs: StringSetType }
+  | { kind: "symmetricDifference"; lhs: StringSetType; rhs: StringSetType }
+  | { kind: "union"; lhs: StringSetType; rhs: StringSetType }
 
 export type NumberType =
   | { kind: "constant"; value: number }
@@ -103,6 +120,7 @@ export type ListFunctionType =
 export type BooleanType =
   | { kind: "constant"; value: boolean }
   | { kind: "compare"; value: BooleanCompareType }
+  | { kind: "membership"; value: BooleanMembershipType }
   | { kind: "binary"; value: BooleanBinaryType }
   | { kind: "ternary"; condition: BooleanType; trueValue: BooleanType; falseValue: BooleanType }
   | { kind: "not"; value: BooleanType }
@@ -115,6 +133,7 @@ export type BooleanCompareType =
   | { kind: "lessThan"; lhs: NumberType; rhs: NumberType }
   | { kind: "lessThanOrEqual"; lhs: NumberType; rhs: NumberType }
 
+export type BooleanMembershipType = { lhs: StringType; rhs: StringSetType }
+
 export type BooleanBinaryType =
-  | { kind: "and"; lhs: BooleanType; rhs: BooleanType }
-  | { kind: "or"; lhs: BooleanType; rhs: BooleanType }
+  { kind: "and"; lhs: BooleanType; rhs: BooleanType } | { kind: "or"; lhs: BooleanType; rhs: BooleanType }

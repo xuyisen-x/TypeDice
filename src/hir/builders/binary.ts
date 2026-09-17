@@ -1,9 +1,12 @@
 import { tokenMatcher, type IToken } from "chevrotain"
 import {
+  Ampersand,
+  Caret,
   Equal,
   Greater,
   GreaterEqual,
   Hash,
+  In,
   Less,
   LessEqual,
   LogicalAnd,
@@ -11,6 +14,7 @@ import {
   Minus,
   NotEqual,
   Percent,
+  Pipe,
   Plus,
   Slash,
   SlashSlash,
@@ -50,10 +54,19 @@ import {
 import { booleanAndBoolean, booleanOrBoolean } from "../operations/boolean.js"
 import type { BinaryExpressionCstNode } from "../../syntax/generated/cst.js"
 import { buildUnaryExpressionHir } from "./unary.js"
+import { TYPE_NAME } from "../utils.js"
+import { PRECEDENCE } from "../../utils.js"
+import {
+  stringSetDifference,
+  stringSetIntersection,
+  stringSetSymmetricDifference,
+  stringSetUnion,
+  stringInStringSet,
+} from "../operations/string-set.js"
 
 function binaryPrecedence(op: IToken): number {
-  if (tokenMatcher(op, LogicalOr)) return 1
-  if (tokenMatcher(op, LogicalAnd)) return 2
+  if (tokenMatcher(op, LogicalOr)) return PRECEDENCE.or
+  if (tokenMatcher(op, LogicalAnd)) return PRECEDENCE.and
   if (
     tokenMatcher(op, Less) ||
     tokenMatcher(op, LessEqual) ||
@@ -62,12 +75,16 @@ function binaryPrecedence(op: IToken): number {
     tokenMatcher(op, Equal) ||
     tokenMatcher(op, NotEqual)
   )
-    return 3
-  if (tokenMatcher(op, Hash)) return 4
-  if (tokenMatcher(op, Plus) || tokenMatcher(op, Minus)) return 5
+    return PRECEDENCE.compare
+  if (tokenMatcher(op, Hash)) return PRECEDENCE.concat
+  if (tokenMatcher(op, In)) return PRECEDENCE.membership
+  if (tokenMatcher(op, Pipe)) return PRECEDENCE.setUnion
+  if (tokenMatcher(op, Caret)) return PRECEDENCE.setSymmetricDifference
+  if (tokenMatcher(op, Ampersand)) return PRECEDENCE.setIntersection
+  if (tokenMatcher(op, Plus) || tokenMatcher(op, Minus)) return PRECEDENCE.additive
   /* v8 ignore else -- @preserve */
   if (tokenMatcher(op, Star) || tokenMatcher(op, Slash) || tokenMatcher(op, SlashSlash) || tokenMatcher(op, Percent))
-    return 6
+    return PRECEDENCE.multiplicative
   /* v8 ignore next -- @preserve */ throw new Error(`Unreachable: unknown binary operator ${op.image}`)
 }
 
@@ -108,9 +125,8 @@ function buildBinaryOperationHir(lhs: HIRNode, op: IToken, rhs: HIRNode): HIRNod
       return { kind: "boolean", value: numberEqualNumber(lhs.value, rhs.value) }
     } else if (tokenMatcher(op, NotEqual)) {
       return { kind: "boolean", value: numberNotEqualNumber(lhs.value, rhs.value) }
-    } else hirErrorToken(`二元运算符${op.image}不适用于数字类型与数字类型`, op)
+    }
   }
-  if (lhs.kind === "number" && rhs.kind === "boolean") hirErrorToken("无法将布尔类型与数字类型进行二元运算", op)
   if (lhs.kind === "number" && rhs.kind === "list") {
     if (tokenMatcher(op, Plus)) {
       return { kind: "list", value: numberPlusList(lhs.value, rhs.value) }
@@ -124,17 +140,15 @@ function buildBinaryOperationHir(lhs: HIRNode, op: IToken, rhs: HIRNode): HIRNod
       return { kind: "list", value: numberIntDivideList(lhs.value, rhs.value, op) }
     } else if (tokenMatcher(op, Percent)) {
       return { kind: "list", value: numberModuloList(lhs.value, rhs.value, op) }
-    } else hirErrorToken(`二元运算符${op.image}不适用于数字类型与列表类型`, op)
+    }
   }
-  if (lhs.kind === "boolean" && rhs.kind === "number") hirErrorToken("无法将布尔类型与数字类型进行二元运算", op)
   if (lhs.kind === "boolean" && rhs.kind === "boolean") {
     if (tokenMatcher(op, LogicalAnd)) {
       return { kind: "boolean", value: booleanAndBoolean(lhs.value, rhs.value) }
     } else if (tokenMatcher(op, LogicalOr)) {
       return { kind: "boolean", value: booleanOrBoolean(lhs.value, rhs.value) }
-    } else hirErrorToken(`二元运算符${op.image}不适用于布尔类型与布尔类型`, op)
+    }
   }
-  if (lhs.kind === "boolean" && rhs.kind === "list") hirErrorToken("无法将布尔类型与列表类型进行二元运算", op)
   if (lhs.kind === "list" && rhs.kind === "number") {
     if (tokenMatcher(op, Plus)) {
       return { kind: "list", value: listPlusNumber(lhs.value, rhs.value) }
@@ -148,16 +162,26 @@ function buildBinaryOperationHir(lhs: HIRNode, op: IToken, rhs: HIRNode): HIRNod
       return { kind: "list", value: listIntDivideNumber(lhs.value, rhs.value, op) }
     } else if (tokenMatcher(op, Percent)) {
       return { kind: "list", value: listModuloNumber(lhs.value, rhs.value, op) }
-    } else hirErrorToken(`二元运算符${op.image}不适用于列表类型与数字类型`, op)
+    }
   }
-  if (lhs.kind === "list" && rhs.kind === "boolean") hirErrorToken("无法将布尔类型与列表类型进行二元运算", op)
-  /* v8 ignore else -- @preserve */
-  if (lhs.kind === "list" && rhs.kind === "list") {
-    if (tokenMatcher(op, Hash)) {
-      return { kind: "list", value: listConcatList(lhs.value, rhs.value) }
-    } else hirErrorToken(`二元运算符${op.image}不适用于列表类型与列表类型`, op)
+  if (lhs.kind === "list" && rhs.kind === "list" && tokenMatcher(op, Hash)) {
+    return { kind: "list", value: listConcatList(lhs.value, rhs.value) }
   }
-  /* v8 ignore next -- @preserve */ throw new Error("Unreachable")
+  if (lhs.kind === "stringSet" && rhs.kind === "stringSet") {
+    if (tokenMatcher(op, Minus)) {
+      return { kind: "stringSet", value: stringSetDifference(lhs.value, rhs.value) }
+    } else if (tokenMatcher(op, Ampersand)) {
+      return { kind: "stringSet", value: stringSetIntersection(lhs.value, rhs.value) }
+    } else if (tokenMatcher(op, Caret)) {
+      return { kind: "stringSet", value: stringSetSymmetricDifference(lhs.value, rhs.value) }
+    } else if (tokenMatcher(op, Pipe)) {
+      return { kind: "stringSet", value: stringSetUnion(lhs.value, rhs.value) }
+    }
+  }
+  if (lhs.kind === "string" && rhs.kind === "stringSet" && tokenMatcher(op, In)) {
+    return { kind: "boolean", value: stringInStringSet(lhs.value, rhs.value) }
+  }
+  hirErrorToken(`二元运算符"${op.image}"不适用于${TYPE_NAME[lhs.kind]}类型与${TYPE_NAME[rhs.kind]}类型`, op)
 }
 
 export function buildBinaryExpressionHir(node: BinaryExpressionCstNode, env: HirEnv): HIRNode {

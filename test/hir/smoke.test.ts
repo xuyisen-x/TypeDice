@@ -31,7 +31,7 @@ describe("Smoke tests", () => {
   })
 
   it("catches bad characters", () => {
-    expect(() => canonicalize("true | false")).toThrow(LexerError)
+    expect(() => canonicalize("true ~ false")).toThrow(LexerError)
   })
 
   it("catches bad types", () => {

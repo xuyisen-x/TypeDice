@@ -3,6 +3,8 @@ import { assertNever, type Result } from "../utils.js"
 import { visitBoolean } from "./visitors/boolean.js"
 import { visitList } from "./visitors/list.js"
 import { visitNumber } from "./visitors/number.js"
+import { visitString } from "./visitors/string.js"
+import { visitStringSet } from "./visitors/string-set.js"
 import type { OutputNode, EvaluationEnvironment, EvaluationOptions, EvaluationResult } from "./types.js"
 import { defaultRandom } from "./utils.js"
 import { RuntimeException } from "./errors.js"
@@ -45,6 +47,10 @@ function evaluateNode(env: EvaluationEnvironment, value: HIRNode): OutputNode {
       return visitList(env, value.value, true)
     case "boolean":
       return visitBoolean(env, value.value, true)
+    case "string":
+      return visitString(env, value.value, true)
+    case "stringSet":
+      return visitStringSet(env, value.value, true)
     default:
       return assertNever(value)
   }

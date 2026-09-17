@@ -13,6 +13,9 @@ describe("Ternary operator", () => {
       ["2d8 > 7 ? 1d6 > 3 : false", "2d8 > 7 ? 1d6 > 3 : false"],
       ["true ? [1, 2] : [3, 4]", "[1, 2]"],
       ["len(tolist(3d6x)) > 6 ? [1, 2] : [3, 4]", "len(tolist(3d6x)) > 6 ? [1, 2] : [3, 4]"],
+      ['1d2 = 1 ? "a" : "b"', '1d2 = 1 ? "a" : "b"'],
+      ['1d2 = 1 ? {"a"} : {"b"}', '1d2 = 1 ? {"a"} : {"b"}'],
+      ['{1d2 = 1 ? "a" : "b", "c"}', '{1d2 = 1 ? "a" : "b", "c"}'],
       ["(1d6 > 3 ? true : false) ? 1d6 > 3 : false", "(1d6 > 3 ? true : false) ? 1d6 > 3 : false"],
     ])("folds %s into %s", (input, expected) => {
       expect(canonicalize(input)).toBe(expected)

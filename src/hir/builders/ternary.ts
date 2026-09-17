@@ -50,6 +50,26 @@ export function buildConditionalExpressionHir(node: ConditionalExpressionCstNode
         falseValue: falseBranchHir.value,
       },
     }
+  if (trueBranchHir.kind === "string" && falseBranchHir.kind === "string")
+    return {
+      kind: "string",
+      value: {
+        kind: "ternary",
+        condition: conditionHir.value,
+        trueValue: trueBranchHir.value,
+        falseValue: falseBranchHir.value,
+      },
+    }
+  if (trueBranchHir.kind === "stringSet" && falseBranchHir.kind === "stringSet")
+    return {
+      kind: "stringSet",
+      value: {
+        kind: "ternary",
+        condition: conditionHir.value,
+        trueValue: trueBranchHir.value,
+        falseValue: falseBranchHir.value,
+      },
+    }
   /* v8 ignore else -- @preserve */
   if (trueBranchHir.kind === "boolean" && falseBranchHir.kind === "boolean")
     return {

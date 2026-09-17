@@ -1,4 +1,4 @@
-import type { BooleanBinaryType, BooleanCompareType, BooleanType } from "../../hir/types.js"
+import type { BooleanBinaryType, BooleanCompareType, BooleanMembershipType, BooleanType } from "../../hir/types.js"
 import { assertNever, PRECEDENCE } from "../../utils.js"
 import { visitNumber } from "./number.js"
 import type { EvaluationEnvironment, NodeLayout, OutputNode } from "../types.js"
@@ -14,8 +14,12 @@ import {
   setLeftOperandParentheses,
   setRightOperandParentheses,
   shortCircuited,
+  stringSetValue,
+  stringValue,
   withRollBarrier,
 } from "../utils.js"
+import { visitStringSet } from "./string-set.js"
+import { visitString } from "./string.js"
 
 export function visitBoolean(env: EvaluationEnvironment, value: BooleanType, active: boolean): OutputNode {
   switch (value.kind) {
@@ -26,6 +30,8 @@ export function visitBoolean(env: EvaluationEnvironment, value: BooleanType, act
     }
     case "compare":
       return visitBooleanCompare(env, value.value, active)
+    case "membership":
+      return visitBooleanMembership(env, value.value, active)
     case "binary":
       return visitBooleanBinary(env, value.value, active)
     case "ternary":
@@ -35,6 +41,24 @@ export function visitBoolean(env: EvaluationEnvironment, value: BooleanType, act
     default:
       return assertNever(value)
   }
+}
+
+function visitBooleanMembership(env: EvaluationEnvironment, value: BooleanMembershipType, active: boolean): OutputNode {
+  const lhs = visitString(env, value.lhs, active)
+  const rhs = visitStringSet(env, value.rhs, active)
+
+  setLeftOperandParentheses(lhs, PRECEDENCE.membership)
+  setRightOperandParentheses(rhs, PRECEDENCE.membership)
+  const layout: NodeLayout = { kind: "binary", operators: ["in"], operands: [lhs, rhs] }
+  if (!active) return shortCircuited(reserveNodeID(env), layout, PRECEDENCE.membership)
+
+  return evaluated(
+    reserveNodeID(env),
+    layout,
+    PRECEDENCE.membership,
+    { kind: "boolean", value: stringSetValue(rhs).has(stringValue(lhs)) },
+    maxReadyRound([lhs, rhs])
+  )
 }
 
 function visitBooleanCompare(env: EvaluationEnvironment, value: BooleanCompareType, active: boolean): OutputNode {

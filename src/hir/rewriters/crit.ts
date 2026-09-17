@@ -3,6 +3,7 @@ import { numberMultiplyNumber } from "../operations/number.js"
 import type {
   BooleanBinaryType,
   BooleanCompareType,
+  BooleanMembershipType,
   BooleanType,
   DicePoolType,
   HIRNode,
@@ -14,6 +15,9 @@ import type {
   NumberBinaryType,
   NumberFunctionType,
   NumberType,
+  StringSetBinaryType,
+  StringSetType,
+  StringType,
   SuccessPoolType,
 } from "../types.js"
 
@@ -445,12 +449,21 @@ function rewriteBooleanBinary(value: BooleanBinaryType): BooleanBinaryType {
   }
 }
 
+function rewriteBooleanMembership(value: BooleanMembershipType): BooleanMembershipType {
+  return {
+    lhs: rewriteString(value.lhs),
+    rhs: rewriteStringSet(value.rhs),
+  }
+}
+
 function rewriteBoolean(value: BooleanType): BooleanType {
   switch (value.kind) {
     case "constant":
       return value
     case "compare":
       return { kind: "compare", value: rewriteBooleanCompare(value.value) }
+    case "membership":
+      return { kind: "membership", value: rewriteBooleanMembership(value.value) }
     case "binary":
       return { kind: "binary", value: rewriteBooleanBinary(value.value) }
     case "ternary":
@@ -468,6 +481,50 @@ function rewriteBoolean(value: BooleanType): BooleanType {
   }
 }
 
+function rewriteString(value: StringType): StringType {
+  switch (value.kind) {
+    case "constant":
+      return value
+    case "ternary":
+      return {
+        kind: "ternary",
+        condition: rewriteBoolean(value.condition),
+        trueValue: rewriteString(value.trueValue),
+        falseValue: rewriteString(value.falseValue),
+      }
+    /* v8 ignore next -- @preserve */
+    default:
+      return assertNever(value)
+  }
+}
+
+function rewriteStringSetBinary(value: StringSetBinaryType): StringSetBinaryType {
+  return {
+    kind: value.kind,
+    lhs: rewriteStringSet(value.lhs),
+    rhs: rewriteStringSet(value.rhs),
+  }
+}
+
+function rewriteStringSet(value: StringSetType): StringSetType {
+  switch (value.kind) {
+    case "explicit":
+      return { kind: "explicit", value: value.value.map(rewriteString) }
+    case "binary":
+      return { kind: "binary", value: rewriteStringSetBinary(value.value) }
+    case "ternary":
+      return {
+        kind: "ternary",
+        condition: rewriteBoolean(value.condition),
+        trueValue: rewriteStringSet(value.trueValue),
+        falseValue: rewriteStringSet(value.falseValue),
+      }
+    /* v8 ignore next -- @preserve */
+    default:
+      return assertNever(value)
+  }
+}
+
 export function rewriteHirForCrit(value: HIRNode): HIRNode {
   switch (value.kind) {
     case "number":
@@ -476,6 +533,10 @@ export function rewriteHirForCrit(value: HIRNode): HIRNode {
       return { kind: "list", value: rewriteList(value.value) }
     case "boolean":
       return { kind: "boolean", value: rewriteBoolean(value.value) }
+    case "string":
+      return { kind: "string", value: rewriteString(value.value) }
+    case "stringSet":
+      return { kind: "stringSet", value: rewriteStringSet(value.value) }
     /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)

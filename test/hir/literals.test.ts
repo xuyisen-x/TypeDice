@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { buildHirOrThrow, canonicalize, HIRBuilderError, ParserError } from "../helper.js"
+import { buildHirOrThrow, canonicalize, HIRBuilderError, LexerError, ParserError } from "../helper.js"
 
 describe("HIR atoms", () => {
   describe("number literals", () => {
@@ -30,6 +30,19 @@ describe("HIR atoms", () => {
     it.each([
       ["true", "true"],
       ["FALSE", "false"],
+    ])("canonicalizes %s as %s", (input, expected) => {
+      expect(canonicalize(input)).toBe(expected)
+    })
+  })
+
+  describe("string literals", () => {
+    it.each([
+      ['""', '""'],
+      ['"hello"', '"hello"'],
+      ['"你好 🎲"', '"你好 🎲"'],
+      ['"line\\nbreak"', '"line\\nbreak"'],
+      ['"quote: \\" and slash: \\\\"', '"quote: \\" and slash: \\\\"'],
+      ['"\\u4f60\\u597d"', '"你好"'],
     ])("canonicalizes %s as %s", (input, expected) => {
       expect(canonicalize(input)).toBe(expected)
     })
@@ -67,11 +80,27 @@ describe("HIR atoms", () => {
     })
   })
 
+  describe("string set literals", () => {
+    it.each([
+      ["{}", "{}"],
+      ['{"a", "b"}', '{"a", "b"}'],
+      ['{ "a","b" }', '{"a", "b"}'],
+      ['{"", "你好", "line\\nbreak"}', '{"", "你好", "line\\nbreak"}'],
+      ['{true ? "a" : "b", "c"}', '{"a", "c"}'],
+      ['{"a", "b", "a", "a"}', '{"a", "b"}'],
+      ['{"a", "\\u0061"}', '{"a"}'],
+    ])("canonicalizes %s as %s", (input, expected) => {
+      expect(canonicalize(input)).toBe(expected)
+    })
+  })
+
   describe("parenthesized atoms", () => {
     it.each([
       ["(((1)))", "1"],
       ["((true))", "true"],
       ["([1, 2])", "[1, 2]"],
+      ['(("hello"))', '"hello"'],
+      ['(({"a", "b"}))', '{"a", "b"}'],
     ])("removes redundant parentheses from %s", (input, expected) => {
       expect(canonicalize(input)).toBe(expected)
     })
@@ -83,6 +112,18 @@ describe("HIR atoms", () => {
     })
     it.each(["[1, 2, 3,]", "2d-1"])("rejects %s", (input) => {
       expect(() => buildHirOrThrow(input)).toThrow(ParserError)
+    })
+  })
+
+  describe("invalid strings and string sets", () => {
+    it.each(['["a"]', '"a" + "b"', "{1}", '{"a", 1}', '{"a" + "b"}'])("rejects %s during HIR construction", (input) => {
+      expect(() => buildHirOrThrow(input)).toThrow(HIRBuilderError)
+    })
+    it("rejects a trailing comma during parsing", () => {
+      expect(() => buildHirOrThrow('{"a",}')).toThrow(ParserError)
+    })
+    it.each(['"unterminated', '"bad\\qescape"', '"line\nbreak"'])("rejects %s during lexing", (input) => {
+      expect(() => buildHirOrThrow(input)).toThrow(LexerError)
     })
   })
 

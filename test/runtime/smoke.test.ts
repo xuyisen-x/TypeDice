@@ -33,6 +33,75 @@ function dicePool(node: OutputNode): DicePool {
 }
 
 describe("Runtime evaluation", () => {
+  it("evaluates string and string set literals", () => {
+    const stringOutput = evaluateHirOrThrow(buildHirOrThrow('"hello\\nworld"')).output
+    const setOutput = evaluateHirOrThrow(buildHirOrThrow('{"a", "b"}')).output
+
+    expect(evaluatedValue(stringOutput)).toEqual({ kind: "string", value: "hello\nworld" })
+    expect(evaluatedValue(setOutput)).toEqual({ kind: "stringSet", value: new Set(["a", "b"]) })
+    expect(stringOutput.layout).toEqual({ kind: "atom", text: '"hello\\nworld"' })
+    expect(setOutput.layout.kind).toBe("stringSet")
+  })
+
+  it("evaluates conditional string values", () => {
+    const stringSource = sequenceRandom(2)
+    const setSource = sequenceRandom(1)
+    const stringOutput = evaluateHirOrThrow(buildHirOrThrow('1d2 = 2 ? "hit" : "miss"'), {
+      random: stringSource.random,
+    }).output
+    const setOutput = evaluateHirOrThrow(buildHirOrThrow('{1d2 = 2 ? "hit" : "miss", "fixed"}'), {
+      random: setSource.random,
+    }).output
+
+    expect(evaluatedValue(stringOutput)).toEqual({ kind: "string", value: "hit" })
+    expect(evaluatedValue(setOutput)).toEqual({ kind: "stringSet", value: new Set(["miss", "fixed"]) })
+  })
+
+  it("deduplicates dynamically evaluated string set elements", () => {
+    const source = sequenceRandom(2)
+    const output = evaluateHirOrThrow(buildHirOrThrow('{1d2 = 2 ? "same" : "other", "same"}'), {
+      random: source.random,
+    }).output
+
+    expect(evaluatedValue(output)).toEqual({ kind: "stringSet", value: new Set(["same"]) })
+  })
+
+  it.each([
+    ['{1d2 = 1 ? "a" : "x", "b"} - {"b"}', new Set(["a"]), "-"],
+    ['{"a", 1d2 = 1 ? "b" : "x"} & {"b"}', new Set(["b"]), "&"],
+    ['{"a", 1d2 = 1 ? "b" : "x"} ^ {"b", "c"}', new Set(["a", "c"]), "^"],
+    ['{"a", 1d2 = 1 ? "b" : "x"} | {"b", "c"}', new Set(["a", "b", "c"]), "|"],
+  ])("evaluates dynamic string set operation %s", (input, expected, operator) => {
+    const source = sequenceRandom(1)
+    const output = evaluateHirOrThrow(buildHirOrThrow(input), { random: source.random }).output
+
+    expect(evaluatedValue(output)).toEqual({ kind: "stringSet", value: expected })
+    expect(output.layout).toMatchObject({ kind: "binary", operators: [operator] })
+  })
+
+  it.each([
+    [1, true],
+    [2, false],
+  ])("evaluates dynamic string set membership for roll %s", (roll, expected) => {
+    const source = sequenceRandom(roll)
+    const output = evaluateHirOrThrow(buildHirOrThrow('"a" in {1d2 = 1 ? "a" : "b"}'), {
+      random: source.random,
+    }).output
+
+    expect(evaluatedValue(output)).toEqual({ kind: "boolean", value: expected })
+    expect(output.layout).toMatchObject({ kind: "binary", operators: ["in"] })
+  })
+
+  it("short-circuits string set membership", () => {
+    const source = sequenceRandom(1)
+    const output = evaluateHirOrThrow(buildHirOrThrow('false && "a" in {1d2 = 1 ? "a" : "b"}'), {
+      random: source.random,
+    }).output
+
+    expect(evaluatedValue(output)).toEqual({ kind: "boolean", value: false })
+    expect(source.calls()).toEqual([])
+  })
+
   it("tracks nested dice groups and roll rounds", () => {
     const source = sequenceRandom(1, 6)
     const output = evaluateHirOrThrow(buildHirOrThrow("(1d2)d6"), { random: source.random }).output

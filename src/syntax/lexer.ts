@@ -9,7 +9,7 @@ import { chineseLexerErrorMessageProvider } from "../errors.js"
 
 const category = (name: string, label: string): TokenType => createToken({ name, pattern: Lexer.NA, label })
 
-export const BinaryOperator = category("BinaryOperator", "二元运算符") // 所有普通二元运算符：|| && < <= > >= = != # + - * / // %
+export const BinaryOperator = category("BinaryOperator", "二元运算符") // 所有普通二元运算符：|| && < <= > >= = != # in | ^ & + - * / // %
 export const UnaryOperator = category("UnaryOperator", "一元运算符") // 前缀运算符：+ - !
 export const CompareOperator = category("CompareOperator", "比较运算符") // 比较运算符：< <= > >= = !=
 export const KeepDropModifierOperator = category("KeepDropModifierOperator", "保留/移除修饰符") // kh kl dh dl
@@ -117,6 +117,13 @@ export const LessEqual = createToken({
   categories: [BinaryOperator, CompareOperator],
 })
 
+export const In = createToken({
+  name: "In",
+  pattern: /in/i,
+  label: "in",
+  categories: [BinaryOperator],
+})
+
 // ============================================================
 // 7. Normal function keywords
 //
@@ -201,7 +208,19 @@ export const Lt = keyword("Lt", "lt")
 export const Lc = keyword("Lc", "lc")
 
 // ============================================================
-// 10. Number literal
+// 10. String literal
+// ============================================================
+
+// Uses JSON-compatible escaping, including escaped quotes, backslashes,
+// control characters, and Unicode code units.
+export const StringLiteral = createToken({
+  name: "StringLiteral",
+  pattern: /"(?:\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})|[^"\\\u0000-\u001F])*"/,
+  label: "字符串字面量",
+})
+
+// ============================================================
+// 11. Number literal
 // ============================================================
 
 // Supports:
@@ -221,24 +240,26 @@ export const NumberLiteral = createToken({
 })
 
 // ============================================================
-// 11. Delimiters
+// 12. Delimiters
 // ============================================================
 
 export const LParen = createToken({ name: "LParen", pattern: /\(/, label: "(" })
 export const RParen = createToken({ name: "RParen", pattern: /\)/, label: ")" })
 export const LBracket = createToken({ name: "LBracket", pattern: /\[/, label: "[" })
 export const RBracket = createToken({ name: "RBracket", pattern: /\]/, label: "]" })
+export const LCurly = createToken({ name: "LCurly", pattern: /\{/, label: "{" })
+export const RCurly = createToken({ name: "RCurly", pattern: /\}/, label: "}" })
 export const Comma = createToken({ name: "Comma", pattern: /,/, label: "," })
 
 // ============================================================
-// 12. Ternary operator
+// 13. Ternary operator
 // ============================================================
 
 export const Question = createToken({ name: "Question", pattern: /\?/, label: "?" })
 export const Colon = createToken({ name: "Colon", pattern: /:/, label: ":" })
 
 // ============================================================
-// 13. Single-character binary / unary operators
+// 14. Single-character binary / unary operators
 // ============================================================
 
 // + is both binary and unary.
@@ -260,6 +281,10 @@ export const Slash = createToken({ name: "Slash", pattern: /\//, label: "/", cat
 export const Percent = createToken({ name: "Percent", pattern: /%/, label: "%", categories: [BinaryOperator] })
 // List concatenation
 export const Hash = createToken({ name: "Hash", pattern: /#/, label: "#", categories: [BinaryOperator] })
+// String set operations. Logical && and || must appear before their single-character prefixes.
+export const Ampersand = createToken({ name: "Ampersand", pattern: /&/, label: "&", categories: [BinaryOperator] })
+export const Caret = createToken({ name: "Caret", pattern: /\^/, label: "^", categories: [BinaryOperator] })
+export const Pipe = createToken({ name: "Pipe", pattern: /\|/, label: "|", categories: [BinaryOperator] })
 
 // ! is ONLY logical NOT now.
 // != has already been defined before this token.
@@ -284,7 +309,7 @@ export const Equal = createToken({
 })
 
 // ============================================================
-// 14. Token vocabulary
+// 15. Token vocabulary
 // ============================================================
 
 export const allTokens: TokenType[] = [
@@ -348,12 +373,17 @@ export const allTokens: TokenType[] = [
   R,
   X,
   // Literals
+  StringLiteral,
   NumberLiteral,
+  // In should appear after Inf, otherwise Inf will be split into "In" + "f"
+  In,
   // Delimiters
   LParen,
   RParen,
   LBracket,
   RBracket,
+  LCurly,
+  RCurly,
   Comma,
   // Ternary operator
   Question,
@@ -365,6 +395,9 @@ export const allTokens: TokenType[] = [
   Slash,
   Percent,
   Hash,
+  Ampersand,
+  Caret,
+  Pipe,
   LogicalNot, // != must appear before !
   Greater, // >= and <= must appear before > and <
   Less,
@@ -372,7 +405,7 @@ export const allTokens: TokenType[] = [
 ]
 
 // ============================================================
-// 15. Lexer singleton
+// 16. Lexer singleton
 // ============================================================
 
 export const diceLexer = new Lexer(allTokens, {
@@ -382,7 +415,7 @@ export const diceLexer = new Lexer(allTokens, {
 })
 
 // ============================================================
-// 16. Public lexer API
+// 17. Public lexer API
 // ============================================================
 
 export function lexDice(input: string): Result<IToken[], ILexingError[]> {

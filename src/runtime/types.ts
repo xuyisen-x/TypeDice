@@ -39,6 +39,8 @@ export type RuntimeValue =
   | { kind: "number"; value: number }
   | { kind: "boolean"; value: boolean }
   | { kind: "list"; value: number[] }
+  | { kind: "string"; value: string }
+  | { kind: "stringSet"; value: Set<string> }
   | { kind: "dicepool"; value: DicePool }
   | { kind: "successpool"; value: SuccessPool }
 
@@ -79,6 +81,7 @@ export type DieDetail = {
 export type NodeLayout =
   | { kind: "atom"; text: string }
   | { kind: "list"; children: OutputNode[] }
+  | { kind: "stringSet"; children: OutputNode[] }
   | { kind: "unary"; operator: string; operand: OutputNode }
   | { kind: "binary"; operators: string[]; operands: OutputNode[] }
   | { kind: "ternary"; condition: OutputNode; trueBranch: OutputNode; falseBranch: OutputNode }

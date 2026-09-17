@@ -30,6 +30,9 @@ conditional_expr
 (* Binary operators are parsed as a flat sequence.              *)
 (* Their precedence and associativity are handled when          *)
 (* constructing the AST.                                        *)
+(* Relevant precedence, from low to high: #, in, |, ^, &, -.   *)
+(* in, |, ^, and & sit between concat (#) and additive (+/-);   *)
+(* set difference uses the additive precedence of -.            *)
 (* ============================================================ *)
 
 binary_expr
@@ -41,6 +44,10 @@ binary_op
     | logical_and_op
     | compare_op
     | concat_op
+    | membership_op
+    | set_union_op
+    | set_symmetric_difference_op
+    | set_intersection_op
     | additive_op
     | multiplicative_op ;
 
@@ -60,6 +67,18 @@ compare_op
 
 concat_op
     = "#" ;
+
+membership_op
+    = "in" ;
+
+set_union_op
+    = "|" ;
+
+set_symmetric_difference_op
+    = "^" ;
+
+set_intersection_op
+    = "&" ;
 
 additive_op
     = "+"
@@ -112,9 +131,11 @@ dice_tail
 
 atom
     = number
+    | string
     | boolean
     | named_expr
     | list
+    | string_set
     | function_call
     | special_form
     | "(" expr ")" ;
@@ -122,6 +143,18 @@ atom
 boolean
     = "true"
     | "false" ;
+
+string
+    = '"'
+      { string_char | escape_sequence }
+      '"' ;
+
+string_char
+    = ? any Unicode character except '"', "\\", and U+0000 through U+001F ? ;
+
+escape_sequence
+    = "\\" ( '"' | "\\" | "/" | "b" | "f" | "n" | "r" | "t"
+      | "u" hex_digit hex_digit hex_digit hex_digit ) ;
 
 
 (* ============================================================ *)
@@ -148,7 +181,7 @@ named_expr_char
 
 
 (* ============================================================ *)
-(* 8. Lists                                                     *)
+(* 8. Lists and string sets                                     *)
 (* ============================================================ *)
 
 list
@@ -157,6 +190,13 @@ list
         { "," expr }
       ]
       "]" ;
+
+string_set
+    = "{"
+      [ expr
+        { "," expr }
+      ]
+      "}" ;
 
 
 (* ============================================================ *)
@@ -361,3 +401,8 @@ exponent
 digit
     = "0" | "1" | "2" | "3" | "4"
     | "5" | "6" | "7" | "8" | "9" ;
+
+hex_digit
+    = digit
+    | "a" | "b" | "c" | "d" | "e" | "f"
+    | "A" | "B" | "C" | "D" | "E" | "F" ;

@@ -1,6 +1,7 @@
 import type {
   BooleanBinaryType,
   BooleanCompareType,
+  BooleanMembershipType,
   BooleanType,
   DicePoolType,
   HIRNode,
@@ -12,6 +13,9 @@ import type {
   NumberBinaryType,
   NumberFunctionType,
   NumberType,
+  StringSetBinaryType,
+  StringSetType,
+  StringType,
   SuccessPoolType,
 } from "./types.js"
 import { assertNever, formatFiniteNumber, PRECEDENCE } from "../utils.js"
@@ -457,6 +461,10 @@ function renderBooleanCompare(value: BooleanCompareType): Rendered {
   return renderInfix(renderNumber(value.lhs), operator, renderNumber(value.rhs), PRECEDENCE.compare)
 }
 
+function renderBooleanMembership(value: BooleanMembershipType): Rendered {
+  return renderInfix(renderString(value.lhs), "in", renderStringSet(value.rhs), PRECEDENCE.membership)
+}
+
 function renderBooleanBinary(value: BooleanBinaryType): Rendered {
   switch (value.kind) {
     case "and":
@@ -478,6 +486,8 @@ function renderBoolean(value: BooleanType): Rendered {
       }
     case "compare":
       return renderBooleanCompare(value.value)
+    case "membership":
+      return renderBooleanMembership(value.value)
     case "binary":
       return renderBooleanBinary(value.value)
     case "ternary":
@@ -494,6 +504,59 @@ function renderBoolean(value: BooleanType): Rendered {
   }
 }
 
+function renderString(value: StringType): Rendered {
+  switch (value.kind) {
+    case "constant":
+      return { text: JSON.stringify(value.value), precedence: PRECEDENCE.atom }
+    case "ternary":
+      return renderTernary(
+        renderBoolean(value.condition),
+        renderString(value.trueValue),
+        renderString(value.falseValue)
+      )
+    /* v8 ignore next -- @preserve */
+    default:
+      return assertNever(value)
+  }
+}
+
+function renderStringSetBinary(value: StringSetBinaryType): Rendered {
+  switch (value.kind) {
+    case "difference":
+      return renderInfix(renderStringSet(value.lhs), "-", renderStringSet(value.rhs), PRECEDENCE.additive)
+    case "intersection":
+      return renderInfix(renderStringSet(value.lhs), "&", renderStringSet(value.rhs), PRECEDENCE.setIntersection)
+    case "symmetricDifference":
+      return renderInfix(renderStringSet(value.lhs), "^", renderStringSet(value.rhs), PRECEDENCE.setSymmetricDifference)
+    case "union":
+      return renderInfix(renderStringSet(value.lhs), "|", renderStringSet(value.rhs), PRECEDENCE.setUnion)
+    /* v8 ignore next -- @preserve */
+    default:
+      return assertNever(value)
+  }
+}
+
+function renderStringSet(value: StringSetType): Rendered {
+  switch (value.kind) {
+    case "explicit":
+      return {
+        text: `{${value.value.map((item) => renderString(item).text).join(", ")}}`,
+        precedence: PRECEDENCE.atom,
+      }
+    case "binary":
+      return renderStringSetBinary(value.value)
+    case "ternary":
+      return renderTernary(
+        renderBoolean(value.condition),
+        renderStringSet(value.trueValue),
+        renderStringSet(value.falseValue)
+      )
+    /* v8 ignore next -- @preserve */
+    default:
+      return assertNever(value)
+  }
+}
+
 export function hirToString(value: HIRNode): string {
   switch (value.kind) {
     case "number":
@@ -502,6 +565,10 @@ export function hirToString(value: HIRNode): string {
       return renderList(value.value).text
     case "boolean":
       return renderBoolean(value.value).text
+    case "string":
+      return renderString(value.value).text
+    case "stringSet":
+      return renderStringSet(value.value).text
     /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)

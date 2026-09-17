@@ -11,6 +11,7 @@ import {
   Dc,
   D,
   NumberLiteral,
+  StringLiteral,
   BooleanLiteral,
   NamedExpression,
   LParen,
@@ -18,6 +19,8 @@ import {
   Comma,
   LBracket,
   RBracket,
+  LCurly,
+  RCurly,
   BuiltinFunction,
   Filter,
   RepeatForm,
@@ -135,9 +138,11 @@ export class DiceParser extends CstParser {
     this.OR({
       DEF: [
         { ALT: () => this.CONSUME(NumberLiteral) },
+        { ALT: () => this.CONSUME(StringLiteral) },
         { ALT: () => this.CONSUME(BooleanLiteral) },
         { ALT: () => this.CONSUME(NamedExpression) },
         { ALT: () => this.SUBRULE(this.listExpression) },
+        { ALT: () => this.SUBRULE(this.stringSetExpression) },
         { ALT: () => this.SUBRULE(this.regularFunctionCall) },
         { ALT: () => this.SUBRULE(this.filterCall) },
         { ALT: () => this.SUBRULE(this.repeatForm) },
@@ -152,7 +157,8 @@ export class DiceParser extends CstParser {
           },
         },
       ],
-      ERR_MSG: "数字字面量、布尔值字面量、列表字面量、命名表达式、函数调用或括号包裹的表达式",
+      ERR_MSG:
+        "数字字面量、字符串字面量、布尔值字面量、列表字面量、字符串集合字面量、命名表达式、函数调用或括号包裹的表达式",
     })
   })
 
@@ -173,6 +179,25 @@ export class DiceParser extends CstParser {
     })
     this.SUBRULE4(this.optionalWhitespace) // Allow whitespace before the closing bracket
     this.CONSUME2(RBracket)
+  })
+
+  public readonly stringSetExpression = this.RULE("stringSetExpression", () => {
+    this.CONSUME(LCurly)
+    this.SUBRULE(this.optionalWhitespace) // Allow whitespace after the opening brace
+    this.OPTION(() => {
+      this.SUBRULE(this.expression, { LABEL: "element" })
+      this.MANY({
+        GATE: () => this.nextAfterOptionalWhitespaceIs(Comma),
+        DEF: () => {
+          this.SUBRULE2(this.optionalWhitespace) // Allow whitespace before the comma
+          this.CONSUME(Comma)
+          this.SUBRULE3(this.optionalWhitespace) // Allow whitespace after the comma
+          this.SUBRULE2(this.expression, { LABEL: "elements" })
+        },
+      })
+    })
+    this.SUBRULE4(this.optionalWhitespace) // Allow whitespace before the closing brace
+    this.CONSUME(RCurly)
   })
 
   public readonly regularFunctionCall = this.RULE("regularFunctionCall", () => {

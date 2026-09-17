@@ -105,9 +105,11 @@ export interface AtomCstNode extends CstNode {
 
 export type AtomCstChildren = {
   NumberLiteral?: IToken[];
+  StringLiteral?: IToken[];
   BooleanLiteral?: IToken[];
   NamedExpression?: IToken[];
   listExpression?: ListExpressionCstNode[];
+  stringSetExpression?: StringSetExpressionCstNode[];
   regularFunctionCall?: RegularFunctionCallCstNode[];
   filterCall?: FilterCallCstNode[];
   repeatForm?: RepeatFormCstNode[];
@@ -130,6 +132,20 @@ export type ListExpressionCstChildren = {
   Comma?: IToken[];
   elements?: ExpressionCstNode[];
   RBracket: IToken[];
+};
+
+export interface StringSetExpressionCstNode extends CstNode {
+  name: "stringSetExpression";
+  children: StringSetExpressionCstChildren;
+}
+
+export type StringSetExpressionCstChildren = {
+  LCurly: IToken[];
+  optional_whitespace: (Optional_whitespaceCstNode)[];
+  element?: ExpressionCstNode[];
+  Comma?: IToken[];
+  elements?: ExpressionCstNode[];
+  RCurly: IToken[];
 };
 
 export interface RegularFunctionCallCstNode extends CstNode {
@@ -294,6 +310,7 @@ export interface ICstNodeVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
   diceTail(children: DiceTailCstChildren, param?: IN): OUT;
   atom(children: AtomCstChildren, param?: IN): OUT;
   listExpression(children: ListExpressionCstChildren, param?: IN): OUT;
+  stringSetExpression(children: StringSetExpressionCstChildren, param?: IN): OUT;
   regularFunctionCall(children: RegularFunctionCallCstChildren, param?: IN): OUT;
   filterCall(children: FilterCallCstChildren, param?: IN): OUT;
   repeatForm(children: RepeatFormCstChildren, param?: IN): OUT;

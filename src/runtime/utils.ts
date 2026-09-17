@@ -170,6 +170,8 @@ export function numberValue(node: OutputNode): number {
       return value.value.successCount
     case "boolean":
     case "list":
+    case "string":
+    case "stringSet":
       throw new Error(`Unreachable: expected a numeric value, received ${value.kind}`)
     default:
       return assertNever(value)
@@ -182,9 +184,23 @@ export function booleanValue(node: OutputNode): boolean {
   return value.value
 }
 
+export function stringValue(node: OutputNode): string {
+  const value = requireEvaluated(node).value
+  if (value.kind !== "string") throw new Error(`Unreachable: expected a string value, received ${value.kind}`)
+  return value.value
+}
+
 export function listValue(node: OutputNode): number[] {
   const value = requireEvaluated(node).value
   if (value.kind !== "list") throw new Error(`Unreachable: expected a list value, received ${value.kind}`)
+  return value.value
+}
+
+export function stringSetValue(node: OutputNode): Set<string> {
+  const value = requireEvaluated(node).value
+  if (value.kind !== "stringSet") {
+    throw new Error(`Unreachable: expected a string set value, received ${value.kind}`)
+  }
   return value.value
 }
 
