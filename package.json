@@ -20,6 +20,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "profile": "node scripts/run-profile.mjs",
     "format": "prettier . --write",
     "format:check": "prettier . --check"
   },
