@@ -63,6 +63,7 @@ export function comparatorText(kind: ModParamType["kind"]): string {
       return "<"
     case "lessThanOrEqual":
       return "<="
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(kind)
   }
@@ -88,6 +89,7 @@ export function listBinaryOperator(kind: Exclude<ListBinaryType["kind"], "concat
     case "modulo":
     case "moduloReverse":
       return "%"
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(kind)
   }
@@ -107,6 +109,7 @@ export function compare(kind: ModParamType["kind"], lhs: number, rhs: number): b
       return lhs < rhs
     case "lessThanOrEqual":
       return lhs <= rhs
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(kind)
   }
@@ -120,8 +123,7 @@ export function setRightOperandParentheses(node: OutputNode, precedence: number)
   if (node.precedence <= precedence) node.parenthesized = true
 }
 
-export function prepareBinaryOperands(operands: OutputNode[], precedence: number): void {
-  if (operands.length === 0) return
+export function prepareBinaryOperands(operands: [OutputNode, ...OutputNode[]], precedence: number): void {
   setLeftOperandParentheses(operands[0], precedence)
   for (const operand of operands.slice(1)) setRightOperandParentheses(operand, precedence)
 }
@@ -155,6 +157,7 @@ export function shortCircuited(id: number, layout: NodeLayout, precedence: numbe
 }
 
 export function requireEvaluated(node: OutputNode): EvaluatedOutputNode {
+  /* v8 ignore if -- @preserve */
   if (node.status !== "evaluated") throw new Error("Unreachable: expected an evaluated output node")
   return node
 }
@@ -168,11 +171,12 @@ export function numberValue(node: OutputNode): number {
       return value.value.total
     case "successpool":
       return value.value.successCount
-    case "boolean":
-    case "list":
-    case "string":
-    case "stringSet":
+    /* v8 ignore next -- @preserve */ case "boolean":
+    /* v8 ignore next -- @preserve */ case "list":
+    /* v8 ignore next -- @preserve */ case "string":
+    /* v8 ignore next -- @preserve */ case "stringSet":
       throw new Error(`Unreachable: expected a numeric value, received ${value.kind}`)
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -180,38 +184,42 @@ export function numberValue(node: OutputNode): number {
 
 export function booleanValue(node: OutputNode): boolean {
   const value = requireEvaluated(node).value
+  /* v8 ignore if -- @preserve */
   if (value.kind !== "boolean") throw new Error(`Unreachable: expected a boolean value, received ${value.kind}`)
   return value.value
 }
 
 export function stringValue(node: OutputNode): string {
   const value = requireEvaluated(node).value
+  /* v8 ignore if -- @preserve */
   if (value.kind !== "string") throw new Error(`Unreachable: expected a string value, received ${value.kind}`)
   return value.value
 }
 
 export function listValue(node: OutputNode): number[] {
   const value = requireEvaluated(node).value
+  /* v8 ignore if -- @preserve */
   if (value.kind !== "list") throw new Error(`Unreachable: expected a list value, received ${value.kind}`)
   return value.value
 }
 
 export function stringSetValue(node: OutputNode): Set<string> {
   const value = requireEvaluated(node).value
-  if (value.kind !== "stringSet") {
-    throw new Error(`Unreachable: expected a string set value, received ${value.kind}`)
-  }
+  /* v8 ignore if -- @preserve */
+  if (value.kind !== "stringSet") throw new Error(`Unreachable: expected a string set value, received ${value.kind}`)
   return value.value
 }
 
 export function dicePoolValue(node: OutputNode): DicePool {
   const value = requireEvaluated(node).value
+  /* v8 ignore if -- @preserve */
   if (value.kind !== "dicepool") throw new Error(`Unreachable: expected a dice pool, received ${value.kind}`)
   return value.value
 }
 
 export function successPoolValue(node: OutputNode): SuccessPool {
   const value = requireEvaluated(node).value
+  /* v8 ignore if -- @preserve */
   if (value.kind !== "successpool") throw new Error(`Unreachable: expected a success pool, received ${value.kind}`)
   return value.value
 }

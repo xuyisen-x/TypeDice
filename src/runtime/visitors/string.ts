@@ -13,6 +13,7 @@ export function visitString(env: EvaluationEnvironment, value: StringType, activ
     }
     case "ternary":
       return visitStringTernary(env, value, active)
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }

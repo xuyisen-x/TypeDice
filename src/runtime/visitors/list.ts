@@ -32,6 +32,7 @@ export function visitList(env: EvaluationEnvironment, value: ListType, active: b
       return visitListBinary(env, value.value, active)
     case "ternary":
       return visitListTernary(env, value, active)
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -164,6 +165,7 @@ function visitListFunction(env: EvaluationEnvironment, value: ListFunctionType, 
         Math.max(maxReadyRound([list]), modParam.readyRound)
       )
     }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -272,6 +274,7 @@ function visitListBinary(env: EvaluationEnvironment, value: ListBinaryType, acti
             return Math.floor(item / numberValue(rhs))
           case "modulo":
             return item % numberValue(rhs)
+          /* v8 ignore next -- @preserve */
           default:
             return assertNever(value)
         }
@@ -322,6 +325,7 @@ function visitListBinary(env: EvaluationEnvironment, value: ListBinaryType, acti
           case "moduloReverse": {
             return numberValue(lhs) % item
           }
+          /* v8 ignore next -- @preserve */
           default:
             return assertNever(value)
         }
@@ -335,6 +339,7 @@ function visitListBinary(env: EvaluationEnvironment, value: ListBinaryType, acti
         maxReadyRound([lhs, rhs])
       )
     }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }

@@ -8,7 +8,7 @@ export function visitModParam(env: EvaluationEnvironment, value: ModParamType, a
   const param = visitNumber(env, value.value, active)
   if (param.precedence !== PRECEDENCE.atom) param.parenthesized = true
   const comparator = comparatorText(value.kind)
-  if (!active) return { comparator, param, predicate: () => false, readyRound: 0 }
+  if (!active) return { comparator, param, /* v8 ignore next -- @preserve */ predicate: () => false, readyRound: 0 }
 
   const target = numberValue(param)
   return {

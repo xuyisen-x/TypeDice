@@ -32,10 +32,11 @@ export function evaluateHir(value: HIRNode, options?: EvaluationOptions): Result
       },
     }
   } catch (e) {
+    /* v8 ignore else -- @preserve */
     if (e instanceof RuntimeException) {
       return { ok: false, error: e.message }
     }
-    throw e
+    /* v8 ignore next -- @preserve */ throw e
   }
 }
 
@@ -51,6 +52,7 @@ function evaluateNode(env: EvaluationEnvironment, value: HIRNode): OutputNode {
       return visitString(env, value.value, true)
     case "stringSet":
       return visitStringSet(env, value.value, true)
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }

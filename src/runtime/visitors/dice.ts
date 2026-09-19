@@ -141,6 +141,7 @@ export function visitDicePool(env: EvaluationEnvironment, value: DicePoolType, a
         Math.max(dependencyRound, ...result.details.map((detail) => detail.rollRound))
       )
     }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -171,6 +172,7 @@ export function visitSuccessPool(env: EvaluationEnvironment, value: SuccessPoolT
       fromDice = false
       marksFailure = true
       break
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }

@@ -1,8 +1,11 @@
 import type {
+  DicePool,
   EvaluationOptions,
   EvaluationResult,
   HIRNode,
+  OutputNode,
   resolveNamedExpressionResult,
+  RuntimeValue,
   StandardErrorLocation,
 } from "../src/index.js"
 import { buildHirFromString, evaluateHir, hirToString } from "../src/index.js"
@@ -70,4 +73,46 @@ export function evaluateHirOrThrow(value: HIRNode, options?: EvaluationOptions):
     throw new EvaluationError(result.error)
   }
   return result.value
+}
+
+type RandomSource = NonNullable<EvaluationOptions["random"]>
+type RandomFace = Parameters<RandomSource>[0]
+
+export function sequenceRandom(...values: number[]): {
+  random: RandomSource
+  calls: () => RandomFace[]
+} {
+  let index = 0
+  const faces: RandomFace[] = []
+  return {
+    random: (face) => {
+      if (index >= values.length) throw new Error("The deterministic random sequence was exhausted")
+      faces.push(face)
+      return values[index++]
+    },
+    calls: () => faces,
+  }
+}
+
+export function evaluatedValue(node: OutputNode): RuntimeValue {
+  if (node.status !== "evaluated") throw new Error("Expected an evaluated node")
+  return node.value
+}
+
+export function evaluate(input: string, rolls: number[]) {
+  const source = sequenceRandom(...rolls)
+  return evaluatedValue(evaluateHirOrThrow(buildHirOrThrow(input), { random: source.random }).output)
+}
+
+export function dicePool(node: OutputNode): DicePool {
+  const value = evaluatedValue(node)
+  if (value.kind !== "dicepool") throw new Error("Expected a dice pool")
+  return value.value
+}
+
+export function numericResult(value: RuntimeValue): number {
+  if (value.kind === "number") return value.value
+  if (value.kind === "dicepool") return value.value.total
+  if (value.kind === "successpool") return value.value.successCount
+  throw new Error(`Expected a numeric runtime value, received ${value.kind}`)
 }

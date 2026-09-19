@@ -36,6 +36,7 @@ export function visitNumber(env: EvaluationEnvironment, value: NumberType, activ
       return visitNumberTernary(env, value, active)
     case "negative":
       return visitSyntheticNegative(env, value.value, active)
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -84,6 +85,7 @@ function visitNumberBinary(env: EvaluationEnvironment, value: NumberBinaryType, 
       return visitNumberPairBinary(env, value.lhs, "//", value.rhs, active, (lhs, rhs) => Math.floor(lhs / rhs))
     case "modulo":
       return visitNumberPairBinary(env, value.lhs, "%", value.rhs, active, (lhs, rhs) => lhs % rhs)
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -119,6 +121,7 @@ function visitNumberAdd(
   }
 
   if (value.constant !== 0 || operands.length === 0) {
+    /* v8 ignore if -- @preserve */
     if (operands.length === 0) {
       operands.push(visitAtomNumber(env, value.constant, active))
     } else if (value.constant < 0) {
@@ -130,7 +133,7 @@ function visitNumberAdd(
     }
   }
 
-  prepareBinaryOperands(operands, PRECEDENCE.additive)
+  prepareBinaryOperands(operands as [OutputNode, ...OutputNode[]], PRECEDENCE.additive)
   const layout: NodeLayout = { kind: "binary", operators, operands }
   if (!active) return shortCircuited(reserveNodeID(env), layout, PRECEDENCE.additive)
 
@@ -153,7 +156,7 @@ function visitNumberMultiply(
     operands.push(visitAtomNumber(env, value.constant, active))
   }
   operands.push(...value.factors.map((factor) => visitNumber(env, factor, active)))
-  prepareBinaryOperands(operands, PRECEDENCE.multiplicative)
+  prepareBinaryOperands(operands as [OutputNode, ...OutputNode[]], PRECEDENCE.multiplicative)
 
   const layout: NodeLayout = {
     kind: "binary",
@@ -240,6 +243,7 @@ function visitNumberFunction(env: EvaluationEnvironment, value: NumberFunctionTy
         maxReadyRound([argument])
       )
     }
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }

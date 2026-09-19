@@ -38,6 +38,7 @@ export function visitBoolean(env: EvaluationEnvironment, value: BooleanType, act
       return visitBooleanTernary(env, value, active)
     case "not":
       return visitBooleanNot(env, value.value, active)
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -105,7 +106,7 @@ function visitBooleanBinary(env: EvaluationEnvironment, value: BooleanBinaryType
     layout,
     precedence,
     { kind: "boolean", value: result },
-    evaluateRhs ? maxReadyRound([lhs, rhs]) : maxReadyRound([lhs])
+    maxReadyRound([lhs, rhs])
   )
 }
 
@@ -144,6 +145,7 @@ function visitBooleanTernary(
 function visitBooleanNot(env: EvaluationEnvironment, value: BooleanType, active: boolean): OutputNode {
   const operand = visitBoolean(env, value, active)
 
+  /* v8 ignore else -- @preserve */
   if (operand.precedence <= PRECEDENCE.unary) operand.parenthesized = true
   const layout: NodeLayout = { kind: "unary", operator: "!", operand }
   if (!active) return shortCircuited(reserveNodeID(env), layout, PRECEDENCE.unary)

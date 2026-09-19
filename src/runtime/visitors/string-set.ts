@@ -24,6 +24,7 @@ export function visitStringSet(env: EvaluationEnvironment, value: StringSetType,
       return visitStringSetBinary(env, value.value, active)
     case "ternary":
       return visitStringSetTernary(env, value, active)
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -42,6 +43,7 @@ function visitStringSetBinary(env: EvaluationEnvironment, value: StringSetBinary
         return { operator: "^", precedence: PRECEDENCE.setSymmetricDifference }
       case "union":
         return { operator: "|", precedence: PRECEDENCE.setUnion }
+      /* v8 ignore next -- @preserve */
       default:
         return assertNever(value)
     }
@@ -71,6 +73,7 @@ function visitStringSetBinary(env: EvaluationEnvironment, value: StringSetBinary
     case "union":
       result = new Set([...lhsSet, ...rhsSet])
       break
+    /* v8 ignore next -- @preserve */
     default:
       return assertNever(value)
   }
@@ -102,6 +105,7 @@ function visitExplicitStringSet(
       value: new Set(
         children.map((child) => {
           const childValue = requireEvaluated(child).value
+          /* v8 ignore if -- @preserve */
           if (childValue.kind !== "string") throw new Error("Unreachable: expected a string value")
           return childValue.value
         })
