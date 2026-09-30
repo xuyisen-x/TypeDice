@@ -8,6 +8,9 @@ out/
 *.tsbuildinfo
 *.tgz
 
+# Local documentation
+/docs/
+
 # Test output
 coverage/
 .nyc_output/
